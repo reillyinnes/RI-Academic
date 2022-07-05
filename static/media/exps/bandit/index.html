@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<title>Bandit Task</title>
+	<meta charset="UTF-8">
+	<script src="jspsych-6.3.0/jspsych.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-button-response.js"></script>
+	<script src="jspsych-6.3.0/plugins/jspsych-call-function.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-image-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-image-button-response.js"></script>
+    <script src="jstat-1.x/dist/jstat.js"></script> <!-- include jStat, from the CDN or otherwise -->
+    <script src="jspsych-6.3.0/plugins/jspsych-preload.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-fullscreen.js"></script>
+      <link href="jspsych-6.3.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+
+
+	
+</head>
+
+<body>
+	<script type='text/javascript'>
+	
+	
+	/* Script created by Reilly Innes (2021) for a 4 armed bandit task 
+	Code is based on code provided on jspsych for simple choice rt experiment. The code takes images from the /img folder,
+	shows them on screen (randomly) and asks for participants to make a response. All variables and RTs are recorded in a csv file. 
+	Currently the script is set up to output to JATOS. 
+	In the script, there is first a welcome and instructions, then a practice block, then nblocks of testing and then a debrief block. 
+	
+	To include your own stimulus, delete all images from /img directory and paste your images there. 
+	Next take the R script to format the names of the images to stimuli. In this script, be sure to set correct responses. 
+	In the code, you can change any text to include instructions. 
+	A practice block with feedback is also included here. To change the length of the practice block, change the stimuli included. 
+	To set the number of blocks, change the nblocks variable.
+	To change the response keys (currently set as F and J), change the responseLeft and responseRight variables.
+	Note that these variables are also called for the correct responses to stimuli.
+	To use the same stimulus multiple times, you will have to change the code (and use jspsych repetitions functionality)
+	Alternatively, you can include repeats of the stimuli in the image folder, but this is randomised.
+	To include a set block order, make subfolders in /img and then make your test_stim into n arrays pulled from each subfolder (i.e. block 1 would be img/block1/ -> test_stim[1])
+	You can also add a post trial gap by adding in this variable in the test_procedure timeline after test.
+	You can change the fixation time in fixation; trial_duration. 
+	The practice block will run for as many trials as there are prac_stimuli (randomly showing these)
+	
+	For more details, contact reilly.innes@uon.edu.au. To cite this work use the citation;
+	
+	*/
+
+		
+		/* create timeline */
+		var timeline = [];
+		var nblocks = 3;
+		var ntrials = 15;
+		var timeout = 10000;	
+		var tooFast = 200;
+		var postTrialGap = 1500;
+		var optionStart = [1, 1, 1, 1];
+		var online = true;
+		var block_points = 0;
+		var current_block = 0;
+		var username;
+		var currentTask;
+		if (online == true){
+			//username = jatos.urlQueryParameters.PROLIFIC_PID
+			//console.log(username)
+		}else{
+			var username;
+		}
+				
+		var preload = {
+   			 type: 'preload',
+  			  auto_preload: true 
+		}
+		//timeline.push(preload)
+		timeline.push({
+ 		 type: 'fullscreen',
+ 		 fullscreen_mode: true
+		});
+
+		
+		/* define welcome message trial */
+		if (online){
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin.",
+			data: { subject: username }
+		};
+		}else{
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin."
+		};
+		}
+		timeline.push(welcome);
+
+		/* define instructions trial */
+		var instructions = {
+			type: "html-keyboard-response",
+			choices: jsPsych.NO_KEYS,
+			stimulus: "<p>In this experiment, you will be presented with 4 cards on screen and asked to choose between them.</p>" +
+			"<p>Each card has an unknown <b>chance</b> of winning. After making a choice, the <b>value</b> of the card will be revealed.</p>" +
+			"<p> If you <b>win</b>, you will receive <b>1</b> point. If you <b>lose</b>, you will receive <b>0</b> points.</p>"  +
+			"<p>There will be " + ntrials + " trials per round and you should aim to collect the maximum number of points per round.</p>" +
+			"<p>At the start of each round, the chance of winning for each option will reset.</p>"  +
+			"<p> You can commence the experiment shortly. </p>",
+			post_trial_gap: 0,
+			trial_duration: 10000
+
+		};
+		timeline.push(instructions);
+
+		var instructions2 = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: "<p>In this experiment, you will be presented with 4 cards on screen and asked to choose between them.</p>" +
+			"<p>Each card has an unknown <b>chance</b> of winning. After making a choice, the <b>value</b> of the card will be revealed.</p>" +
+			"<p> If you <b>win</b>, you will receive <b>1</b> point. If you <b>lose</b>, you will receive <b>0</b> points.</p>"  +
+			"<p>There will be " + ntrials + " trials per round and you should aim to collect the maximum number of points per round.</p>" +
+			"<p>At the start of each round, the chance of winning for each option will reset.</p>"  +
+				"<p> <b> Press space bar begin a practice trial</b></p>",
+			post_trial_gap: 1000
+		};
+		timeline.push(instructions2);
+		
+		var images = ["img/Set_1.png","img/Set_2.png","img/Set_3.png","img/Set_4.png"];
+		var prac_image = ["img/Set_21.png"]
+
+		function shuffle(array) {
+  			var currentIndex = array.length, temporaryValue, randomIndex;
+ 		 	// While there remain elements to shuffle...
+ 			 while (0 !== currentIndex) {
+  		  	// Pick a remaining element...
+  			  randomIndex = Math.floor(Math.random() * currentIndex);
+  			  currentIndex -= 1;
+	    	// And swap it with the current element.
+    			temporaryValue = array[currentIndex];
+    			array[currentIndex] = array[randomIndex];
+    			array[randomIndex] = temporaryValue;
+  			}
+ 		 return array;
+		}
+
+		// Used like so
+		shuffle(images);
+		
+		
+		var fixation = {
+			type: 'html-keyboard-response',
+			stimulus: '<div style="font-size:60px;">+</div>',
+			choices: jsPsych.NO_KEYS,
+			trial_duration: function () {
+				return jsPsych.randomization.sampleWithoutReplacement([250, 500, 750, 1000, 1250, 1500, 1750, 2000], 1)[0];
+			},
+			data: { test_part: 'fixation' }
+		};
+
+		var test = {
+			type: 'image-button-response',
+			stimulus: jsPsych.timelineVariable('stimulus'),
+			// prompt: function () {			
+// 					var trials = jsPsych.data.get().filter({ test_part: 'test' });		
+// 					var points = trials.select('points').sum();
+// 					
+// 				return "<p>You have " + points + " points so far.</p>";
+// 
+// 			},
+			stimulus_width: 600,
+			choices: ["option A", "option B", "option C", "option D"],
+			data: jsPsych.timelineVariable('data'),
+			on_finish: function (data){
+				data.test_part = "test";
+				if (online==true){
+				data.subject = username;
+				data.task = currentTask;
+				}
+				if (data.rt == null){
+					data.points = 0
+				} else if (data.rt < tooFast){
+					data.points = 0
+				} else if (data.rt >= tooFast && data.response == 0){		
+					data.points = data.option1
+				} else if (data.rt >= tooFast && data.response == 1){
+					data.points = data.option2
+				} else if (data.rt >= tooFast && data.response == 2){
+					data.points = data.option3
+				} else if (data.rt >= tooFast && data.response == 3){
+					data.points = data.option4
+					}
+				block_points = block_points + data.points
+				},
+			post_trial_gap: 0,
+			trial_duration: timeout
+		};
+		
+		
+		var feedback = {
+			type: "image-keyboard-response",
+			stimulus: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				var points = jsPsych.data.get().last(1).values()[0].points;
+				if (last_trial == null){
+					return "img/Lose.png"
+				} else if (last_trial < tooFast){
+					return "img/Lose.png"
+				} else if (points == 1){
+					return "img/Win.png"
+					} else {
+					return "img/Lose.png"
+					} 
+				},
+			data: {test_part: "feedback"},
+			choices: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return [' ']
+				}else if (last_trial < tooFast){
+					return [' ']
+				} else {
+					return jsPsych.NO_KEYS
+					} 
+				},
+			prompt: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				var points = jsPsych.data.get().last(1).values()[0].points;
+				if (last_trial == null){
+					return "<p><b> Too slow! You get 0 points. </b> </p><p> Press space bar to continue</p> "
+				} else if (last_trial < tooFast){
+					return "<p><b> Too fast! You get 0 points. </b> </p><p> Press space bar to continue</p> "
+				} else if (points == 1){
+					return "<p> Nice! You get <b>" + points + "</b> point</p>"
+					} else {
+					return "<p> Unlucky! You get <b>" + points + "</b> points</p>"
+					} 
+				},
+			trial_duration: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return 100000
+				}else if (last_trial < tooFast){
+					return 100000
+				} else{
+					return postTrialGap
+					}
+				},
+				on_finish: function (data){
+				if (online==true){
+					data.subject = username;
+					data.task = currentTask;
+					}
+				}
+			};
+
+
+
+
+		function shuffle(a) {
+    		var j, x, i;
+   			 for (i = a.length - 1; i > 0; i--) {
+    		    j = Math.floor(Math.random() * (i + 1));
+     		   x = a[i];
+     		   a[i] = a[j];
+    	  			  a[j] = x;
+   		 }
+   		 return a;
+			}
+		
+		function normal(mu, sigma, nsamples){
+		    if(!nsamples) nsamples = 6
+		    if(!sigma) sigma = 1
+		    if(!mu) mu=0
+		
+		    var run_total = 0
+		    for(var i=0 ; i<nsamples ; i++){
+		       run_total += Math.random()
+		    }
+		
+		    return sigma*(run_total - nsamples/2)/(nsamples/2) + mu
+		}
+		
+		
+		
+		
+		
+		function create_stim(){
+		//add in starting values bit
+			
+			optionStart = shuffle(optionStart);
+			// var payoff1 = Array.from({ length: ntrials}, () => Math.floor(normal(optionStart[0], 4,1)));
+// 			var payoff2 = Array.from({ length: ntrials}, () => Math.floor(normal(optionStart[1], 4,1)));
+// 			var payoff3 = Array.from({ length: ntrials}, () => Math.floor(normal(optionStart[2], 4,1)));
+// 			var payoff4 = Array.from({ length: ntrials}, () => Math.floor(normal(optionStart[3], 4,1)));
+			var payoff1 = Array.from({ length: ntrials}, () => optionStart[0]);
+			var payoff2 = Array.from({ length: ntrials}, () => optionStart[1]);
+			var payoff3 = Array.from({ length: ntrials}, () => optionStart[2]);
+			var payoff4 = Array.from({ length: ntrials}, () => optionStart[3]);
+			var test_stim = [];
+			
+			var random1 = jStat.beta.sample( 2, 2 );
+			var random2 = jStat.beta.sample( 2, 2 );
+			var random3 = jStat.beta.sample( 2, 2 );
+			var random4 = jStat.beta.sample( 2, 2 );
+
+			
+			var j;
+			for (j = 0; j < ntrials; j++) {
+
+
+				var test = Array.from({ length: 4}, () => Math.random());
+				
+				if (test[0] < random1){
+					p1 = payoff1[j]
+				} else {
+					p1 = 0
+				}
+				if (test[1] < random2){
+					p2 = payoff2[j]
+				} else {
+					p2 = 0
+				}
+				if (test[2] < random3){
+					p3 = payoff3[j]
+				} else {
+					p3 = 0
+				}
+				if (test[3] < random4){
+					p4 = payoff4[j]
+				} else {
+					p4 = 0
+				}
+			
+				stim = { stimulus: images[i], data: { test_part: 'test', option1: p1, option2: p2, option3: p3, option4: p4, prob1: random1, prob2: random2, prob3: random3, prob4: random4 } },
+				test_stim.push(stim);
+				}
+				return(test_stim);
+			}
+		
+
+
+
+			var start_prac = {
+				type: "html-keyboard-response",
+				stimulus: "<p>This is the practice block. " +
+					"</p><p> In this block, you have a chance to prepare for the experiment.</p>" +
+					"</p><p> If you respond too slow, the trial will stop. </p>" +
+						"</p><p> If you respond too fast, you will be warned. </p>" +
+					"<p> There are  " + ntrials + " trials in this block.</p>" +
+					"<p>Press space bar to begin.</p>",
+				choices: [' '],
+				data: { test_part: 'prac block' }
+			};
+			
+			function create_prac(){
+		//add in starting values bit
+			
+			optionStart = shuffle(optionStart);
+			// var payoff1 = Array.from({ length: ntrials}, () => Math.floor(normal(optionStart[0], 4,1)));
+// 			var payoff2 = Array.from({ length: ntrials}, () => Math.floor(normal(optionStart[1], 4,1)));
+// 			var payoff3 = Array.from({ length: ntrials}, () => Math.floor(normal(optionStart[2], 4,1)));
+// 			var payoff4 = Array.from({ length: ntrials}, () => Math.floor(normal(optionStart[3], 4,1)));
+			var payoff1 = Array.from({ length: ntrials}, () => optionStart[0]);
+			var payoff2 = Array.from({ length: ntrials}, () => optionStart[1]);
+			var payoff3 = Array.from({ length: ntrials}, () => optionStart[2]);
+			var payoff4 = Array.from({ length: ntrials}, () => optionStart[3]);
+			var test_stim = [];
+			
+			var random1 = jStat.beta.sample( 2, 2 );
+			var random2 = jStat.beta.sample( 2, 2 );
+			var random3 = jStat.beta.sample( 2, 2 );
+			var random4 = jStat.beta.sample( 2, 2 );
+
+			
+			var j;
+			for (j = 0; j < ntrials; j++) {
+
+
+				var test = Array.from({ length: 4}, () => Math.random());
+				
+				if (test[0] < random1){
+					p1 = payoff1[j]
+				} else {
+					p1 = 0
+				}
+				if (test[1] < random2){
+					p2 = payoff2[j]
+				} else {
+					p2 = 0
+				}
+				if (test[2] < random3){
+					p3 = payoff3[j]
+				} else {
+					p3 = 0
+				}
+				if (test[3] < random4){
+					p4 = payoff4[j]
+				} else {
+					p4 = 0
+				}
+			
+				stim = { stimulus: prac_image, data: { test_part: 'prac', option1: p1, option2: p2, option3: p3, option4: p4, prob1: random1, prob2: random2, prob3: random3, prob4: random4 } },
+				test_stim.push(stim);
+				}
+				return(test_stim);
+			}
+			
+			var prac_procedure = {
+					timeline: [fixation, test, feedback],
+					timeline_variables: create_prac(),
+					repetitions: 1,
+					randomize_order: true
+				};
+			
+			
+			var end_prac = {
+				type: "html-keyboard-response",
+				stimulus: "This is the end of the practice block. Press space bar to continue",
+				choices: [' '],
+				data: { test_part: 'end block' }
+	
+			};	
+
+		var prac_block = {
+				timeline: [start_prac, prac_procedure, end_prac],
+				randomize_order: false,
+			}
+		timeline.push(prac_block);
+
+		var start_experiment = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: " <p>You are now ready to start the experiment!" +
+						"</p><p> If you respond too slow, the trial will stop. </p>" +
+						"</p><p> If you respond too fast, you will be warned. </p>" +
+						"</p><p> Press space bar to continue</p>"
+		}
+		timeline.push(start_experiment);
+
+		
+		 var i;
+ 		for (i = 0; i < nblocks; i++) {
+			var start_block = {
+				type: "html-keyboard-response",
+				stimulus:  "</p><p> This round has " + ntrials + " trials </p>" +
+							"</p><p> Press space bar to begin round</p>",
+				choices: [' '],
+				data: { test_part: 'start block' },
+				on_start: function() {
+					block_points = 0
+				}
+			};
+			
+			var test_procedure = {
+					timeline: [fixation, test, feedback],
+					timeline_variables: create_stim(),
+					repetitions: 1,
+					randomize_order: true
+				};
+			
+			
+			var end_block = {
+				type: "html-keyboard-response",
+				stimulus: function(){
+					current_block = ++current_block;
+					return "<p> This is the end of round "+ current_block + "/"+ nblocks + " .</p> <p> In the last round you got " + block_points + " points! </p><p> Press space bar to continue </p>"
+				},
+				choices: [' '],
+				data: { test_part: 'end block' }
+	
+			};
+			
+			
+	
+			var test_blocks = {
+				timeline: [start_block, test_procedure, end_block],
+				randomize_order: false,
+			}
+		timeline.push(test_blocks);
+		};
+	
+		
+
+		var result = {
+   		 type: 'call-function',
+   		 func: function() {
+			var resultJson = jsPsych.data.get().csv();
+			jatos.submitResultData(resultJson)
+			}
+		}
+		//timeline.push(result);
+		
+		/* define debrief */
+		var debrief_block = {
+ 			type: "html-keyboard-response",
+ 			choices: [' '],
+ 			stimulus: function () {
+ 		 		return "<p>You have now completed the experiment.  </p> " +
+ 						"<p><b> Please press the space bar to finalise results and return to Prolific.</b></p>"+
+						"<p> Thank you!</p>"}
+		 };
+		 timeline.push(debrief_block);
+
+
+
+
+		/* start the experiment */
+		//jatos.onLoad(function() {
+		// 	if (online){
+		// 		username = jatos.urlQueryParameters.PROLIFIC_PID;
+		// 		var currentStudy = jatos.urlQueryParameters.STUDY_ID;
+		// 		currentTask = jatos.urlQueryParameters.TASK_ID;
+
+		// }
+		jsPsych.init({
+ 			timeline: timeline,
+  			//on_finish: function() {
+       	//if (online){
+		//	   var endLink = "https://app.prolific.co/submissions/complete?cc=" + currentStudy;
+		//			jatos.endStudyAndRedirect(endLink);	   
+		  // } else{
+       		//jatos.endStudy();
+		//}
+});
+
+	</script>
+</body>
+
+
+</html>

@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<title>BART</title>
+	<meta charset="UTF-8">
+	<script src="jspsych-6.3.0/jspsych.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-button-response.js"></script>    
+    <script src="jspsych-6.3.0/plugins/jspsych-image-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-image-button-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-canvas-button-response.js"></script>
+	<script src="jspsych-6.3.0/plugins/jspsych-preload.js"></script>
+	<script src="jspsych-6.3.0/plugins/jspsych-call-function.js"></script>  
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+	<script src=//cdnjs.cloudflare.com/ajax/libs/seedrandom/2.3.10/seedrandom.min.js> </script> 
+    <script src="jspsych-6.3.0/plugins/jspsych-fullscreen.js"></script>
+      <link href="jspsych-6.3.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+
+
+	
+</head>
+
+<body>
+	<script type='text/javascript'>
+	
+		
+		
+
+		/* create global variables */
+		var nTrials = 5; // number of trials in experiment
+		var pointsPerPump = 0.05; //number of allocated points per pump
+		var maxPumps = 32;  //maximum pumps before pops
+		var burstProb; //burstProb of 0.9 means 1/10 pumps explodes
+		
+		
+		/* Do not alter below code - these are used as start points */
+		var timeline = [];
+		var pumps = 0;
+		var collect = 0;
+		var fin = 0;
+		var currentProb = 0; 
+		var round = 0;
+		var previousPoints = 0;
+		var overallPoints = 0;
+		var trial = "NA";
+		var overallBursts = 0;
+		var username;
+		var currentTask;
+		var online = true;
+		if (online == true){
+			//username = jatos.urlQueryParameters.PROLIFIC_PID
+			//console.log(username)
+		}else{
+			var username;
+		}
+		
+		var preload = {
+   			 type: 'preload',
+  			  auto_preload: true 
+		}
+		timeline.push(preload)
+		timeline.push({
+ 		 type: 'fullscreen',
+ 		 fullscreen_mode: true
+		});
+
+		
+
+		/* define welcome message trial */
+		if (online){
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin.",
+			data: { subject: username }
+		};
+		}else{
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin."
+		};
+		}
+		timeline.push(welcome);
+
+		/* define instructions trial */
+		var instructions = {
+			type: "html-keyboard-response",
+			choices: jsPsych.NO_KEYS,
+			stimulus: function(){
+				return " <p>In this experiment, you will be presented with " + nTrials + " balloons, one at a time.</p>"+
+				"<p>For each balloon you will have two options:</p>" +
+				"<p><strong>1.</strong> Inflate the balloon by clicking 'pump'.</p>" +
+				"<p> <b> OR </b></p>" +
+				"<p><strong>2.</strong> Bank the current value of the balloon by clicking 'collect'.</p>" +	
+				"<p> <b>***</b></p>" +
+				" <p> Each pump increases the balloon's size and chances of bursting. For each pump you will either gain a temporary $" + pointsPerPump + " or burst the balloon. </p>" + 
+				" <p> If the balloon bursts, your current payment for that trial will be lost and you will move to the next balloon.  Exploded balloons do not affect your overall earnings. </p>" +
+				" <p> Banking your points will start the next balloon and will add the temporary amount to your total.</p>" +
+				"<p> The amount you earned on the previous balloon is shown as the 'Last Balloon'.</p>" +
+				"<p> It is your choice to determine how much to pump up the balloon, but be aware that at some point the balloon will explode. </p>" +
+				//"<p> If the balloon explodes before you click on 'Collect', then you move on to the next balloon and all temporary money is lost.</p>"+
+				"<p> The money gained will not affect your prolific payout, but try to gain as much hypothetical money as possible.</p>" +
+				"<p> You can commence the experiment shortly. </p>"	
+				},
+			post_trial_gap: 0,
+			trial_duration: 15000
+		};
+		timeline.push(instructions);
+
+
+		var instructions2 = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: function(){
+				return " <p>In this experiment, you will be presented with " + nTrials + " balloons, one at a time.</p>"+
+				"<p>For each balloon you will have two options:</p>" +
+				"<p><strong>1.</strong> Inflate the balloon by clicking 'pump'.</p>" +
+				"<p> <b> OR </b></p>" +
+				"<p><strong>2.</strong> Bank the current value of the balloon by clicking 'collect'.</p>" +	
+				"<p> <b>***</b></p>" +
+				" <p> Each pump increases the balloon's size and chances of bursting. For each pump you will either gain a temporary $" + pointsPerPump + " or burst the balloon. </p>" + 
+				" <p> If the balloon bursts, your current payment for that trial will be lost and you will move to the next balloon.  Exploded balloons do not affect your overall earnings. </p>" +
+				" <p> Banking your points will start the next balloon and will add the temporary amount to your total.</p>" +
+				"<p> The amount you earned on the previous balloon is shown as the 'Last Balloon'.</p>" +
+				"<p> It is your choice to determine how much to pump up the balloon, but be aware that at some point the balloon will explode. </p>" +
+				//"<p> If the balloon explodes before you click on 'Collect', then you move on to the next balloon and all temporary money is lost.</p>"+
+				"<p> The money gained will not affect your prolific payout, but try to gain as much hypothetical money as possible.</p>" +
+				"<p><b>Press space bar to begin.<b></p>"},
+			post_trial_gap: 1000
+		};
+		timeline.push(instructions2);
+		
+		
+		var start_experiment = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: " <p>You are now ready to start the experiment!" +
+						"</p><p> Press space bar to continue</p>"
+		}
+		timeline.push(start_experiment);
+		
+		var reset = {
+			type: 'html-keyboard-response',
+			stimulus: '',
+			choices: jsPsych.NO_KEYS,
+			on_start: function(){ 	pumps = 0
+									currentProb = 0
+									fin = 0
+									collect = 0
+									round = ++round
+									trial = "NULL"
+								},
+			trial_duration: 0
+		};
+		
+		
+		
+		
+		var image = new Image();
+    	
+		function drawBalloon(canvas){
+				image.src = 'img/balloon.jpeg';  
+    		image.onload = function () {
+        	var canvasContext = canvas.getContext('2d');
+        	var wrh = image.width / image.height;
+        	var newWidth = (canvas.width/10) + (pumps*15);
+        	var newHeight = newWidth / wrh;
+        	if (newHeight > canvas.height) {
+					newHeight = canvas.height;
+        			newWidth = newHeight * wrh;
+      			}
+        	var xOffset = newWidth < canvas.width ? ((canvas.width - newWidth) / 2) : 0;
+        	//var yOffset = newHeight < canvas.height ? ((canvas.height - newHeight) / 2) : 0;
+			var yOffset = canvas.height - newHeight;
+
+	      	canvasContext.drawImage(image, xOffset, yOffset, newWidth, newHeight);	
+      		};
+      	};
+
+
+		var test = {
+			type: 'canvas-button-response',
+			stimulus: function(c){
+				drawBalloon(c);
+			},
+			prompt: function(){
+				return "<p> Current Round: <strong>" + round + " / " + nTrials + " </strong> </p>"+
+						"<p> Last Balloon: <strong>$" + previousPoints.toFixed(2) + "</strong> </p>"+
+						"<p> Total Banked: <strong>$" + overallPoints.toFixed(2) + "</strong> </p>"
+						//"<p> Pumps: <strong>" + pumps + "</strong> </p>"+
+			},
+			choices: function(){
+				// if(pumps == 0){
+				// 	return ["Pump"]
+				// 	} else {
+					return ["Pump", "Collect"]
+					//}
+			},
+			data: jsPsych.timelineVariable('data'),
+			on_finish: function (data){
+				data.test_part = "test";
+				if (online==true){
+				data.subject = username;
+				data.task = currentTask;
+				}
+				if (data.response == 1){
+					if (pumps > 0){
+					collect = 1
+					trial = "collect"
+					overallPoints = Math.round(((overallPoints + pumps*pointsPerPump) + Number.EPSILON) * 100) / 100
+					previousPoints =  Math.round(((pumps*pointsPerPump) + Number.EPSILON) * 100) / 100
+					data.points = previousPoints
+					data.overallPoints = overallPoints
+					data.burst = 0
+					data.pumps = pumps
+					}
+				} else if (data.response == 0) {
+						pumps = ++pumps
+						burstProb = 1/(maxPumps-pumps)
+						data.pumps = pumps
+					if (pumps == maxPumps){
+						trial = "burst"
+						previousPoints = 0
+						overallBursts = ++overallBursts
+						data.points = 0
+						data.overallPoints = overallPoints
+						data.burst = 1
+					} else{
+						currentProb = Math.random()
+						if (currentProb < burstProb){
+							trial = "burst"
+							previousPoints = 0
+							overallBursts = ++overallBursts
+							data.points = 0
+							data.overallPoints = overallPoints
+							data.burst = 1
+						}
+					}
+				}
+				},
+			post_trial_gap: 0
+		};
+		
+		
+		var feedback = {
+			type: "image-button-response",
+			data: {test_part: "feedback"},
+			stimulus: function(){
+				if (trial == "collect"){
+					return "img/banked.png"
+				} else {
+					return "img/pop.jpeg"
+				} 
+				},
+			choices: ["Next"],
+			prompt: function(){
+				var total_points  = Math.round(((pumps*pointsPerPump) + Number.EPSILON) * 100) / 100
+				//var overall_points  = (Math.round((overallPoints + Number.EPSILON) * 100) / 100).toFixed(2)
+				if (trial == "collect"){
+					return "<p> You collected $" + total_points.toFixed(2) + "! </p>" +
+							"<p> You now have $" + overallPoints.toFixed(2) + " banked.  </p>"
+				} else {
+					return "<p> The balloon burst. You collected $0. </p>" +
+							"<p> You have $" + overallPoints.toFixed(2) + " banked.  </p>"
+					}
+				},
+				on_finish: function (data){
+				if (online==true){
+					data.subject = username;
+					data.task = currentTask;
+					}
+				}
+			};
+	
+		
+		
+		var test_loop = {
+			timeline: [test],
+			loop_function: function(){
+				if (trial == "collect"){
+					if (pumps > 0){
+					fin = 1
+					}
+				} else if (trial == "burst"){
+					fin = 1
+				} else {
+					fin = 0
+				}
+     	 		if(fin == 0){
+       			 	return true;
+      			} else {
+        			return false;
+      			}
+    		}
+		}
+		
+		var test_procedure = {
+				timeline: [reset, test_loop, feedback],
+				repetitions: nTrials,
+				randomize_order: false
+			};
+		
+
+	
+		timeline.push(test_procedure);
+	
+		
+		// var result = {
+   		//  type: 'call-function',
+   		//  func: function() {
+		// 	var resultJson = jsPsych.data.get().csv();
+		// 	jatos.submitResultData(resultJson)
+		// 	}
+		// }
+		// timeline.push(result);
+
+		
+		/* define debrief */
+		var debrief_block = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: function () {
+
+				return "<p>You have now finished the experiment. </p>" +
+					// "<p>You earned " + overallPoints + " points.</p>" +
+					// "<p>You burst " + overallBursts + "/10 balloons.</p>" +
+					"<p> Press the space bar to finalise results and be redirected to Prolific. Thank you!</p>";
+
+			}
+		};
+		timeline.push(debrief_block);
+
+
+
+
+		/* start the experiment */
+		/* start the experiment */
+		//jatos.onLoad(function() {
+		// 	if (online){
+		// 		username = jatos.urlQueryParameters.PROLIFIC_PID;
+		// 		var currentStudy = jatos.urlQueryParameters.STUDY_ID;
+		// 		currentTask = jatos.urlQueryParameters.TASK_ID;
+
+		// }
+		jsPsych.init({
+ 			timeline: timeline,
+  			//on_finish: function() {
+       	//if (online){
+		//	   var endLink = "https://app.prolific.co/submissions/complete?cc=" + currentStudy;
+		//			jatos.endStudyAndRedirect(endLink);	   
+		  // } else{
+       		//jatos.endStudy();
+		//}
+});
+
+	</script>
+</body>
+
+
+</html>

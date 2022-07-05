@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<title>Delay Discounting</title>
+	<meta charset="UTF-8">
+	<script src="jspsych-6.3.0/jspsych.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-keyboard-response.js"></script>
+	<script src="jspsych-6.3.0/plugins/jspsych-html-button-response.js"></script>    
+	<script src="jspsych-6.3.0/plugins/jspsych-call-function.js"></script>    
+    <script src="jspsych-6.3.0/plugins/jspsych-image-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-preload.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+	<script src=//cdnjs.cloudflare.com/ajax/libs/seedrandom/2.3.10/seedrandom.min.js> </script> 
+    <script src="jspsych-6.3.0/plugins/jspsych-fullscreen.js"></script>
+      <link href="jspsych-6.3.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+
+
+	
+</head>
+
+<body>
+	<script type='text/javascript'>
+	
+	
+	/* Script created by Reilly Innes (2021) for a 2 alternate forced choice task (decision making RT task) 
+	based on code provided on jspsych for simple choice rt experiment. The code takes images from the /img folder,
+	shows them on screen (randomly) and asks for participants to make a response. All variables and RTs are recorded in a csv file. 
+	Currently the script is set up to output to JATOS. 
+	In the script, there is first a welcome and instructions, then a practice block, then nblocks of testing and then a debrief block. 
+	
+	To include your own stimulus, delete all images from /img directory and paste your images there. 
+	Next take the R script to format the names of the images to stimuli. In this script, be sure to set correct responses. 
+	In the code, you can change any text to include instructions. 
+	A practice block with feedback is also included here. To change the length of the practice block, change the stimuli included. 
+	To set the number of blocks, change the nblocks variable.
+	To change the response keys (currently set as F and J), change the responseLeft and responseRight variables.
+	Note that these variables are also called for the correct responses to stimuli.
+	To use the same stimulus multiple times, you will have to change the code (and use jspsych repetitions functionality)
+	Alternatively, you can include repeats of the stimuli in the image folder, but this is randomised.
+	To include a set block order, make subfolders in /img and then make your test_stim into n arrays pulled from each subfolder (i.e. block 1 would be img/block1/ -> test_stim[1])
+	You can also add a post trial gap by adding in this variable in the test_procedure timeline after test.
+	You can change the fixation time in fixation; trial_duration. 
+	The practice block will run for as many trials as there are prac_stimuli (randomly showing these)
+	
+	For more details, contact reilly.innes@uon.edu.au. To cite this work use the citation;
+	
+	*/
+	
+		
+	
+	
+		
+		/* create timeline */
+		var timeline = [];
+		var timeout = 10000;	
+		var tooFast = 200;
+		var postTrialGap = 500;
+		var responseLeft = 'z';
+		var responseRight = '/';
+		var goodButtons;
+        //var username = jatos.studySessionData.username;
+		var online = true;
+		//var currentStudy = jatos.studySessionData.study;
+		//var currentTask = jatos.studySessionData.task;
+		if (online == true){
+			// username = jatos.urlQueryParameters.PROLIFIC_PID
+			// console.log(username)
+		}else{
+			//var username;
+		}
+		var preload = {
+   			 type: 'preload',
+  			  auto_preload: true 
+		}
+		timeline.push(preload)
+		timeline.push({
+ 		 type: 'fullscreen',
+ 		 fullscreen_mode: true
+		});
+
+
+		/* define welcome message trial */
+		if (online){
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin.",
+		};
+		}else{
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin."
+		};
+		}
+		timeline.push(welcome);
+
+		
+		
+		var buttonRight = {
+			type: "image-keyboard-response",
+			post_trial_gap: 1000,
+			stimulus: 'setup/keyboard-right.png',
+			prompt: "<br>"+
+					"<br>"+"Please press this right button.",
+			on_finish: function(data){
+				responseRight = data.response
+			}
+		};
+		
+		var buttonLeft = {
+			type: "image-keyboard-response",
+			post_trial_gap: 1000,
+			stimulus: 'setup/keyboard-left.png',
+			prompt: "<br>"+
+					"<br>"+"Please press this left button.",
+			on_finish: function(data){
+				responseLeft = data.response
+			}
+		};
+		
+		
+		var correctButtons = {
+			type: "html-button-response",
+			choices: ['Yes', 'No'],
+			post_trial_gap: 1000,
+			stimulus: function(){
+			return "<p> The left response button is <strong>" + responseLeft.toUpperCase() + "</strong> and the right response button is <strong>" + responseRight.toUpperCase() + " </strong>. </p>" +
+			"<p> Are these correct? </p>"
+			},
+			on_finish: function(data){
+				if(responseLeft==responseRight){
+					goodButtons = 1
+				}else {
+				goodButtons =  data.response
+				}
+			}
+		};		
+		
+		
+		var buttons = {
+			timeline: [buttonLeft, buttonRight, correctButtons],
+			loop_function: function(){
+				key_response = goodButtons;
+     	 		if(key_response == 1){
+       			 return true;
+      			} else {
+        		return false;
+      			}
+    		}
+		}
+		
+		
+  		timeline.push(buttons);
+
+		/* define instructions trial */
+		var instructions = {
+			type: "html-keyboard-response",
+			choices: jsPsych.NO_KEYS,
+			stimulus: function(){
+			return "<p>In this experiment you will be repeatedly presented with " +
+				"two potential amounts of money.</p>"+
+			"<p>One amount will be available <b>now</b> and the other at a specified " +
+				"time in the <b>future</b>.</p>" +
+			"<p>You must indicate which option you would prefer by pressing <b>" + 
+				responseLeft.toUpperCase() + "</b> for the left option (now) or <b>" +
+				responseRight.toUpperCase() + "</b> for the right option (future). </p> " +  
+				"<p> We recommend resting your left and right index fingers on these keys.</p>" +
+			"<p>Please indicate your true preferences.</p>"+
+			"<p> You can commence the experiment shortly. </p>"},
+			post_trial_gap: 0,
+			trial_duration: 10000
+		};
+		timeline.push(instructions);
+
+		var instructions2 = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: function(){
+			return "<p>In this experiment you will be repeatedly presented with " +
+				"two potential amounts of money.</p>"+
+			"<p>One amount will be available <b>now</b> and the other at a specified " +
+				"time in the <b>future</b>.</p>" +
+			"<p>You must indicate which option you would prefer by pressing <b>" + 
+				responseLeft.toUpperCase() + "</b> for the left option (now) or <b>" +
+				responseRight.toUpperCase() + "</b> for the right option (future). </p> " +
+				 "<p> We recommend resting your left and right index fingers on these keys.</p>" +
+			"<p>Please indicate your true preferences.</p>"+
+			"<p> <b> Press space bar to continue.</b></p>"},
+			post_trial_gap: 1000
+		};
+		timeline.push(instructions2);
+
+		var test_stimuli = [{ stimulus: 'img/prob_1.png', data: {test_prob: '1', Today:54 , Future: 55, Delay: 117 } },{ stimulus: 'img/prob_2.png', data: {test_prob: '2', Today:55 , Future: 75, Delay: 61 } },{ stimulus: 'img/prob_3.png', data: {test_prob: '3', Today:19 , Future: 25, Delay: 53 } },{ stimulus: 'img/prob_4.png', data: {test_prob: '4', Today:31 , Future: 85, Delay: 7 } },{ stimulus: 'img/prob_5.png', data: {test_prob: '5', Today:14 , Future: 25, Delay: 19 } },{ stimulus: 'img/prob_6.png', data: {test_prob: '6', Today:47 , Future: 50, Delay: 160 } },{ stimulus: 'img/prob_7.png', data: {test_prob: '7', Today:15 , Future: 35, Delay: 13 } },{ stimulus: 'img/prob_8.png', data: {test_prob: '8', Today:25 , Future: 60, Delay: 14 } },{ stimulus: 'img/prob_9.png', data: {test_prob: '9', Today:78 , Future: 80, Delay: 162 } },{ stimulus: 'img/prob_10.png', data: {test_prob: '10', Today:40 , Future: 55, Delay: 62 } },{ stimulus: 'img/prob_11.png', data: {test_prob: '11', Today:11 , Future: 30, Delay: 7 } },{ stimulus: 'img/prob_12.png', data: {test_prob: '12', Today:67 , Future: 75, Delay: 119 } },{ stimulus: 'img/prob_13.png', data: {test_prob: '13', Today:34 , Future: 35, Delay: 186 } },{ stimulus: 'img/prob_14.png', data: {test_prob: '14', Today:27 , Future: 50, Delay: 21 } },{ stimulus: 'img/prob_15.png', data: {test_prob: '15', Today:69 , Future: 85, Delay: 91 } },{ stimulus: 'img/prob_16.png', data: {test_prob: '16', Today:49 , Future: 60, Delay: 89 } },{ stimulus: 'img/prob_17.png', data: {test_prob: '17', Today:80 , Future: 85, Delay: 157 } },{ stimulus: 'img/prob_18.png', data: {test_prob: '18', Today:24 , Future: 35, Delay: 29 } },{ stimulus: 'img/prob_19.png', data: {test_prob: '19', Today:33 , Future: 80, Delay: 14 } },{ stimulus: 'img/prob_20.png', data: {test_prob: '20', Today:28 , Future: 30, Delay: 179 } },{ stimulus: 'img/prob_21.png', data: {test_prob: '21', Today:34 , Future: 50, Delay: 30 } },{ stimulus: 'img/prob_22.png', data: {test_prob: '22', Today:25 , Future: 30, Delay: 80 } },{ stimulus: 'img/prob_23.png', data: {test_prob: '23', Today:41 , Future: 75, Delay: 20 } },{ stimulus: 'img/prob_24.png', data: {test_prob: '24', Today:54 , Future: 60, Delay: 111 } },{ stimulus: 'img/prob_25.png', data: {test_prob: '25', Today:54 , Future: 80, Delay: 30 } },{ stimulus: 'img/prob_26.png', data: {test_prob: '26', Today:22 , Future: 25, Delay: 136 } },{ stimulus: 'img/prob_27.png', data: {test_prob: '27', Today:20 , Future: 55, Delay: 7 } }];
+		
+			
+		// var start_experiment = {
+		// 	type: "html-keyboard-response",
+		// 	choices: [' '],
+		// 	stimulus: " <p>You are now ready to start the experiment!" +
+		// 				"</p><p> Press space bar to begin</p>"
+		// }
+		// timeline.push(start_experiment);
+		
+		var fixation = {
+			type: 'html-keyboard-response',
+			stimulus: '<div style="font-size:60px;">+</div>',
+			choices: jsPsych.NO_KEYS,
+			trial_duration: function () {
+			return jsPsych.randomization.sampleWithoutReplacement([250, 500, 750, 1000, 1250, 1500, 1750, 2000], 1)[0];
+			},
+			data: { test_part: 'fixation' }
+		};
+
+		var test = {
+			type: 'image-keyboard-response',
+			stimulus: jsPsych.timelineVariable('stimulus'),
+			prompt: function(){return "<p>Left = <strong>Press " + responseLeft.toUpperCase() + " </strong>  &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp;  Right = <strong>Press " + responseRight.toUpperCase() + " </strong> </p>"},
+			choices: function(){return[responseLeft, responseRight]},
+			data: jsPsych.timelineVariable('data'),
+			on_finish: function (data){
+				data.test_part = "test"
+				if (online==true){
+				
+				}
+				if (data.response == responseLeft){
+					data.choice = 1
+				} else {
+					data.choice = 2
+					}
+				},
+			post_trial_gap: 0,
+			trial_duration: timeout
+		};
+		
+		
+		var feedback = {
+			type: "html-keyboard-response",
+			data: {test_part: "feedback"},
+			choices: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return [' ']
+				}else if (last_trial < tooFast){
+					return [' ']
+				} else {
+					return jsPsych.NO_KEYS
+					} 
+				},
+			stimulus: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return "<p><b> Too slow!</b> </p><p> Press space bar to continue</p> "
+				} else if (last_trial < tooFast){
+					return "<p><b> Too fast!</b> </p><p> Press space bar to continue</p> "
+				} else {
+					return ""
+					} 
+				},
+			trial_duration: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return 100000
+				}else if (last_trial < tooFast){
+					return 100000
+				} else{
+					return postTrialGap
+					}
+				},
+				on_finish: function (data){
+				if (online==true){
+					
+					}
+				}
+			};
+	
+		
+		
+			var start_block = {
+			type: "html-keyboard-response",
+			stimulus: function(){ 
+				return "<p> There will be " + test_stimuli.length + " choices.</p>" +
+						"<p>Please try to respond as quickly and as accurately as possible. </p>"+  
+						"<p> Press space bar to begin experiment </p>"},
+			choices: [' '],
+			data: { test_part: 'start block' }
+		};
+		
+		var test_procedure = {
+				timeline: [fixation, test, feedback],
+				timeline_variables: test_stimuli,
+				repetitions: 1,
+				randomize_order: false
+			};
+		
+		
+		var test_blocks = {
+			timeline: [start_block, test_procedure],
+			randomize_order: false
+		}
+		timeline.push(test_blocks);
+	
+		
+
+		// var result = {
+   		//  type: 'call-function',
+   		//  func: function() {
+		// 	var resultJson = jsPsych.data.get().csv();
+		// 	jatos.submitResultData(resultJson)
+		// 	}
+		// }
+		// timeline.push(result);
+		
+		/* define debrief */
+		var debrief_block = {
+ 			type: "html-keyboard-response",
+ 			choices: [' '],
+ 			stimulus: function () {
+ 		 		return "<p>You have now completed the experiment.  </p> " +
+ 						"<p><b> Please press the space bar to finalise results and return to Prolific.</b></p>"+
+				 		"<p> Thank you!</p>"}
+ 		};
+ 		timeline.push(debrief_block);
+
+
+
+
+		/* start the experiment */
+	/* start the experiment */
+		//jatos.onLoad(function() {
+		// 	if (online){
+		// 		username = jatos.urlQueryParameters.PROLIFIC_PID;
+		// 		var currentStudy = jatos.urlQueryParameters.STUDY_ID;
+		// 		currentTask = jatos.urlQueryParameters.TASK_ID;
+
+		// }
+		jsPsych.init({
+ 			timeline: timeline,
+  			//on_finish: function() {
+       	//if (online){
+		//	   var endLink = "https://app.prolific.co/submissions/complete?cc=" + currentStudy;
+		//			jatos.endStudyAndRedirect(endLink);	   
+		  // } else{
+       		//jatos.endStudy();
+		//}
+});
+
+	</script>
+</body>
+
+
+</html>

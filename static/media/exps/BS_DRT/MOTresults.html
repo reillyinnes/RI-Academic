@@ -1,0 +1,60 @@
+<HTML>
+  <HEAD>
+    <script src="/assets/javascripts/jatos.js"></script>
+     <style type="text/css">
+            #end-study-message { 
+                font-size: 16px;
+                border: solid 4px #ddd;
+                border-radius: 4px;
+                padding: 0.5em 2em;
+                text-align: center;
+            }
+            
+            #continue-message { 
+                font-size: 16px;
+                border: solid 4px #ddd;
+                border-radius: 4px;
+                padding: 0.5em 2em;
+                text-align: center;
+                visibility: hidden;
+            }
+            
+            #continueButton {
+                border: solid 10px #fff;
+                border-radius: 10px;
+                padding: 0.5em 2em;
+                text-align: center;
+                visibility: visible;
+            }
+        </style>
+  </HEAD>
+   <body>
+       <div id = "end-study-message">
+            <p>Thank you for completing the study. Please wait while we redirect you to Prolific</p>
+       </div>
+       
+       <div id = "continue-message">
+       </div>
+       
+    </body>
+  
+
+  
+<SCRIPT>		
+
+
+	
+jatos.onLoad(function() {
+    
+	var expSendVariables = jatos.studySessionData.expSendVariables;
+
+    jatos.submitResultData(expSendVariables);
+    jatos.endStudy();	   
+
+
+           });
+		
+		
+  </SCRIPT>
+ 
+</HTML>

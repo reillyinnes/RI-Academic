@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Gavin Cooper | Reilly Innes</title>
+    <link>/author/gavin-cooper/</link>
+      <atom:link href="/author/gavin-cooper/index.xml" rel="self" type="application/rss+xml" />
+    <description>Gavin Cooper</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Wed, 03 Feb 2021 10:00:00 +0000</lastBuildDate>
+    <image>
+      <url>/images/icon_hu1dc3f56a72840a79504e5212c1d5c006_23068_512x512_fill_lanczos_center_3.png</url>
+      <title>Gavin Cooper</title>
+      <link>/author/gavin-cooper/</link>
+    </image>
+    
+    <item>
+      <title>Particle Metropolis within Gibbs; An R package for Bayesian Hierarchical Modelling</title>
+      <link>/talk/ampc2021/</link>
+      <pubDate>Wed, 03 Feb 2021 10:00:00 +0000</pubDate>
+      <guid>/talk/ampc2021/</guid>
+      <description>
+&lt;div style=&#34;position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;&#34;&gt;
+  &lt;iframe src=&#34;https://www.youtube.com/embed/wQ3sX50B7oI?autoplay=1&#34; style=&#34;position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;&#34; allowfullscreen title=&#34;YouTube Video&#34;&gt;&lt;/iframe&gt;
+&lt;/div&gt;
+
+</description>
+    </item>
+    
+  </channel>
+</rss>

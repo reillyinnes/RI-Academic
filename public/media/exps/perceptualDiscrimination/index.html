@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<title> Perceptual Discrimination </title>
+	<meta charset="UTF-8">
+	<script src="jspsych-6.3.0/jspsych.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-button-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-image-keyboard-response.js"></script>
+	<script src="jspsych-6.3.0/plugins/jspsych-preload.js"></script>
+	<script src="jspsych-6.3.0/plugins/jspsych-call-function.js"></script>    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-fullscreen.js"></script>
+      <link href="jspsych-6.3.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+
+
+	
+</head>
+
+<body>
+	<script type='text/javascript'>
+	
+	
+	/* Script created by Reilly Innes (2021) for a 2 alternate forced choice task (decision making RT task) 
+	based on code provided on jspsych for simple choice rt experiment. The code takes images from the /img folder,
+	shows them on screen (randomly) and asks for participants to make a response. All variables and RTs are recorded in a csv file. 
+	Currently the script is set up to output to JATOS. 
+	In the script, there is first a welcome and instructions, then a practice block, then nblocks of testing and then a debrief block. 
+	
+	To include your own stimulus, delete all images from /img directory and paste your images there. 
+	Next take the R script to format the names of the images to stimuli. In this script, be sure to set correct responses. 
+	In the code, you can change any text to include instructions. 
+	A practice block with feedback is also included here. To change the length of the practice block, change the stimuli included. 
+	To set the number of blocks, change the nblocks variable.
+	To change the response keys (currently set as F and J), change the responseLeft and responseRight variables.
+	Note that these variables are also called for the correct responses to stimuli.
+	To use the same stimulus multiple times, you will have to change the code (and use jspsych repetitions functionality)
+	Alternatively, you can include repeats of the stimuli in the image folder, but this is randomised.
+	To include a set block order, make subfolders in /img and then make your test_stim into n arrays pulled from each subfolder (i.e. block 1 would be img/block1/ -> test_stim[1])
+	You can also add a post trial gap by adding in this variable in the test_procedure timeline after test.
+	You can change the fixation time in fixation; trial_duration. 
+	The practice block will run for as many trials as there are prac_stimuli (randomly showing these)
+	
+	For more details, contact reilly.innes@uon.edu.au. To cite this work use the citation;
+	
+	*/
+	
+	
+
+		/* create timeline */
+		var timeline = [];
+		var nblocks = 6;
+		var timeout = 4000;	
+		var tooFast = 150;
+		var postTrialGap = 500;
+		var responseLeft = 's';
+		var responseRight = 'l';
+		var online = true;
+		var currentTask;
+		var username;
+
+		if (online == true){
+			// username = jatos.urlQueryParameters.PROLIFIC_PID
+			// console.log(username)
+		}else{
+			var username;
+		} 
+	
+		var preload = {
+   			 type: 'preload',
+  			  auto_preload: true 
+		}
+		timeline.push(preload)
+		timeline.push({
+ 		 type: 'fullscreen',
+ 		 fullscreen_mode: true
+		});
+
+		
+
+
+		/* define welcome message trial */
+		if (online){
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin.",
+			data: { subject: username }
+		};
+		}else{
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin."
+		};
+		}
+		timeline.push(welcome);
+		
+		
+		var buttonRight = {
+			type: "image-keyboard-response",
+			post_trial_gap: 1000,
+			stimulus: 'setup/keyboard-right.png',
+			prompt: "<br>"+
+					"<br>"+"Please press this right button.",
+			on_finish: function(data){
+				responseRight = data.response
+			}
+		};
+		
+		var buttonLeft = {
+			type: "image-keyboard-response",
+			post_trial_gap: 1000,
+			stimulus: 'setup/keyboard-left.png',
+			prompt: "<br>"+
+					"<br>"+"Please press this left button.",
+			on_finish: function(data){
+				responseLeft = data.response
+			}
+		};
+		
+		
+		var correctButtons = {
+			type: "html-button-response",
+			choices: ['Yes', 'No'],
+			post_trial_gap: 1000,
+			stimulus: function(){
+			return "<p> The left response button is <strong>" + responseLeft.toUpperCase() + "</strong> and the right response button is <strong>" + responseRight.toUpperCase() + " </strong>. </p>" +
+			"<p> Are these correct? </p>"
+			},
+			on_finish: function(data){
+				if(responseLeft==responseRight){
+					goodButtons = 1
+				}else {
+				goodButtons =  data.response
+				}
+			}
+		};		
+		
+		
+		var buttons = {
+			timeline: [ buttonLeft, buttonRight, correctButtons],
+			loop_function: function(){
+				key_response = goodButtons;
+     	 		if(key_response == 1){
+       			 return true;
+      			} else {
+        		return false;
+      			}
+    		}
+		}
+  		timeline.push(buttons);
+		
+		/* define instructions trial */
+		var instructions = {
+			type: "html-keyboard-response",
+			choices: jsPsych.NO_KEYS,
+			stimulus: function(){
+				return "<p>In this experiment, you will be shown a series of coloured patches.</p>" +
+				"<p>The patch will contain some blue pixels and some orange pixels.</p>" +
+				"<p>You must decide if each patch has more orange or blue pixels in it.</p>" +
+				"<p>If there are more <strong>blue</strong> pixels, " +
+				"press <b>" + responseLeft.toUpperCase() + "</b> .</p>" +
+				"<p>If there are more <strong>orange</strong> pixels, press <b>" + responseRight.toUpperCase() + "</b> .</p>" + 
+				" <p> We recommend resting your left and right index fingers on these keys.</p>" +
+				" <p> <b>Please respond as quickly and accurately as possible.</b>" +
+				"<div style='width: 700px;'>" +
+					"<div style='float: left;'><img src='setup/blue_0.4_2.png' width='300px'/>" +
+				"<p class='small'> More blue patch  = <strong> Press the " + responseLeft.toUpperCase() + " key</strong></p></div>" +
+				"<div class='float: right;'><img src='setup/orange_0.6_2.png' width='300px'/>" +
+				"<p class='small'> More orange patch  = <strong> Press the " + responseRight.toUpperCase() + " key</strong></p></div>" +
+				"</div>" +
+				"<p> You can commence the experiment shortly. </p>"
+				},
+				trial_duration: 10000,
+			post_trial_gap: 0
+		};
+		timeline.push(instructions);
+
+		var instructions2 = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: function(){
+				return "<p>In this experiment, you will be shown a series of coloured patches.</p>" +
+				"<p>The patch will contain some blue pixels and some orange pixels.</p>" +
+				"<p>You must decide if each patch has more orange or blue pixels in it.</p>" +
+				"<p>If there are more <strong>blue</strong> pixels, " +
+				"press <b>" + responseLeft.toUpperCase() + "</b> .</p>" +
+				"<p>If there are more <strong>orange</strong> pixels, press <b>" + responseRight.toUpperCase() + "</b> .</p>" + 
+				" <p> We recommend resting your left and right index fingers on these keys.</p>" +
+				" <p> <b>Please respond as quickly and accurately as possible.</b>" +
+				"<div style='width: 700px;'>" +
+				"<div style='float: left;'><img src='setup/blue_0.4_2.png' width='300px'/>" +
+				"<p class='small'> More blue patch  = <strong> Press the " + responseLeft.toUpperCase() + " key</strong></p></div>" +
+				"<div class='float: right;'><img src='setup/orange_0.6_2.png' width='300px'/>" +
+				"<p class='small'> More orange patch  = <strong> Press the " + responseRight.toUpperCase() + " key</strong></p></div>" +
+				"</div>" +
+				"<p><b>Press the space bar to begin the experiment.</b></p>"
+				},
+			post_trial_gap: 1000
+		};
+		timeline.push(instructions2);
+
+//str.toUpperCase()
+		var test_stimuli = [{ stimulus: 'img/blue_0.47_1.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_2.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_3.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_4.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_5.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_6.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_7.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_8.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_9.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_10.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_11.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_12.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_13.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_14.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_15.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_16.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_17.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_18.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_19.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_20.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_21.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_22.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_23.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_24.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_25.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_26.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_27.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_28.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_29.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_30.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_31.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_32.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_33.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_34.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_35.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_36.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_37.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_38.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_39.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.47_40.png', data: {test_part: 'test', cond: 'blue', coherence: '0.47',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_1.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_2.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_3.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_4.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_5.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_6.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_7.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_8.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_9.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_10.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_11.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_12.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_13.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_14.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_15.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_16.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_17.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_18.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_19.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_20.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_21.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_22.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_23.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_24.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_25.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_26.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_27.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_28.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_29.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_30.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_31.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_32.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_33.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_34.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_35.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_36.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_37.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_38.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_39.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.485_40.png', data: {test_part: 'test', cond: 'blue', coherence: '0.485',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_1.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_2.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_3.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_4.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_5.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_6.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_7.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_8.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_9.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_10.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_11.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_12.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_13.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_14.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_15.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_16.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_17.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_18.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_19.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_20.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_21.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_22.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_23.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_24.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_25.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_26.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_27.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_28.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_29.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_30.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_31.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_32.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_33.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_34.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_35.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_36.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_37.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_38.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_39.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/blue_0.49_40.png', data: {test_part: 'test', cond: 'blue', coherence: '0.49',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/orange_0.51_1.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_2.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_3.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_4.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_5.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_6.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_7.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_8.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_9.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_10.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_11.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_12.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_13.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_14.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_15.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_16.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_17.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_18.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_19.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_20.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_21.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_22.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_23.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_24.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_25.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_26.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_27.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_28.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_29.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_30.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_31.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_32.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_33.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_34.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_35.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_36.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_37.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_38.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_39.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.51_40.png', data: {test_part: 'test', cond: 'orange', coherence: '0.51',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_1.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_2.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_3.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_4.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_5.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_6.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_7.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_8.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_9.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_10.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_11.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_12.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_13.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_14.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_15.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_16.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_17.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_18.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_19.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_20.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_21.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_22.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_23.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_24.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_25.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_26.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_27.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_28.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_29.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_30.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_31.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_32.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_33.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_34.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_35.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_36.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_37.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_38.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_39.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.515_40.png', data: {test_part: 'test', cond: 'orange', coherence: '0.515',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_1.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_2.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_3.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_4.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_5.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_6.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_7.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_8.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_9.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_10.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_11.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_12.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_13.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_14.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_15.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_16.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_17.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_18.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_19.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_20.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_21.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_22.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_23.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_24.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_25.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_26.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_27.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_28.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_29.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_30.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_31.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_32.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_33.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_34.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_35.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_36.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_37.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_38.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_39.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } },{ stimulus: 'img/orange_0.53_40.png', data: {test_part: 'test', cond: 'orange', coherence: '0.53',  correct_response: function(){return responseRight} } }];
+
+
+
+		/* test trials */
+		
+
+
+		var prac_stimuli = [
+			{ stimulus: "setup/blue_0.4_1.png", data: { test_part: 'test', cond: 'easy', correct_response: function(){return responseLeft} } },
+			{ stimulus: "setup/orange_0.6_1.png", data: { test_part: 'test', cond: 'hard', correct_response: function(){return responseRight} } }
+		];
+		
+		
+		var prac_instructions = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: "<p>This is a practice block. " +
+				"</p><p> In this block, you have a chance to prepare for the experiment. </p>" +
+				"<p> There are  " + prac_stimuli.length + " trials in this block.</p>" +
+				"<p>Press space bar to begin practice block.</p>",
+			post_trial_gap: 2000
+		};
+		timeline.push(prac_instructions);
+		
+		
+				
+		
+
+
+		function splitRandom(data, n) {
+		  var seen = [];
+		  var counter = 0;
+		
+		  var shuffle = data.reduce(function(r, e) {
+		    function random() {
+		      var rand = parseInt(Math.random(0, test_stimuli.length) * test_stimuli.length);
+		      if (seen.indexOf(rand) != -1) {
+		        return random()
+		      } else {
+		        seen.push(rand)
+		        return rand;
+		      }
+		    }
+		
+		    r[random()] = e;
+		    return r;
+		  }, [])
+		
+		  var split = shuffle.reduce(function(r, e) {
+		    var c = counter++;
+		    r[c] = r[c].concat(e)
+		    counter = counter % n;
+		    return r;
+		  }, Array(n).fill([]))
+		
+		  return split;
+		}
+		
+		var test_stim = splitRandom(test_stimuli,nblocks);
+		
+		
+		
+		
+		var fixation_prac = {
+			type: 'html-keyboard-response',
+			stimulus: '<div style="font-size:60px;">+</div>',
+			choices: jsPsych.NO_KEYS,
+			trial_duration: function () {
+				return jsPsych.randomization.sampleWithoutReplacement([250, 500, 750, 1000, 1250, 1500, 1750, 2000], 1)[0];
+			},
+			data: { test_part: 'practice' }
+		};
+		
+		var test_prac = {
+			type: 'image-keyboard-response',
+			stimulus: jsPsych.timelineVariable('stimulus'),
+			prompt: function(){
+					return "<br>"+
+					 "<br>"+
+					"<br>"+
+					"<br>"+
+					"<p>Blue = <strong>Press " + responseLeft.toUpperCase() + " </strong>  &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp;  Orange = <strong>Press " + responseRight.toUpperCase() + " </strong> </p>"},
+			choices: function(){return [responseLeft, responseRight]},
+			data: jsPsych.timelineVariable('data'),
+			on_finish: function (data){
+				data.test_part = "practice";
+				if (data.response == data.correct_response){
+					data.correct = 1
+				} else {
+					data.correct = 0 
+					}
+				},
+			post_trial_gap: 0
+
+		};
+		
+		var feedback_prac = {
+		type: "html-keyboard-response",
+		data: {test_part: "feedback"},
+		choices: [' '],
+		stimulus: function(){
+			var last_trial = jsPsych.data.get().last(1).values()[0].correct;
+			if (last_trial == 1){
+				return "<b> Correct! </b>" +
+						"<p> Press space bar to continue</p>" 
+				
+			} else{
+				return "<b> Incorrect!</b>" +
+						"<p> Remember to press the <b>" + responseLeft.toUpperCase()  +
+							"</b> key if there are more blue pixels or </p> " +
+							"<p> Press the <b>" + responseRight.toUpperCase() +
+							"</b> key if there are more orange pixels. </p>" +
+						"<p> Press space bar to continue</p>" 
+				}
+			}
+		};
+		
+		var practice = {
+				timeline: [fixation_prac, test_prac, feedback_prac],
+				timeline_variables: prac_stimuli,
+				repetitions: 1,
+				randomize_order: true
+		};
+		timeline.push(practice);
+		
+		
+		var start_experiment = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: " <p>You are now ready to start the experiment!" +
+						"</p><p> If you respond too slow, the trial will stop. </p>" +
+						"</p><p> If you respond too fast, you will be warned. </p>" +
+						"</p><p> Press space bar to continue</p>"
+		}
+		timeline.push(start_experiment);
+		
+		var fixation = {
+			type: 'html-keyboard-response',
+			stimulus: '<div style="font-size:60px;">+</div>',
+			choices: jsPsych.NO_KEYS,
+			trial_duration: function () {
+				return jsPsych.randomization.sampleWithoutReplacement([250, 500, 750, 1000, 1250, 1500, 1750, 2000], 1)[0];
+			},
+			data: { test_part: 'fixation' }
+		};
+
+		var test = {
+			type: 'image-keyboard-response',
+			stimulus: jsPsych.timelineVariable('stimulus'),
+			prompt: function(){return "<p>Blue = <strong>Press " + responseLeft.toUpperCase() + " </strong>  &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp;  Orange = <strong>Press " + responseRight.toUpperCase() + " </strong> </p>"},
+			choices: function(){return[responseLeft, responseRight]},
+			data: jsPsych.timelineVariable('data'),
+			on_finish: function (data){
+				data.test_part = "test"
+				if (online==true){
+				data.subject = username;
+				data.task = currentTask;
+				}
+				if (data.response == data.correct_response){
+					data.correct = 1
+				} else {
+					data.correct = 0 
+					}
+				},
+			post_trial_gap: 0,
+			trial_duration: timeout
+		};
+		
+		
+		var feedback = {
+			type: "html-keyboard-response",
+			data: {test_part: "feedback"},
+			choices: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return [' ']
+				}else if (last_trial < tooFast){
+					return [' ']
+				} else {
+					return jsPsych.NO_KEYS
+					} 
+				},
+			stimulus: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return "<p><b> Too slow!</b> </p><p> Press space bar to continue</p> "
+				} else if (last_trial < tooFast){
+					return "<p><b> Too fast!</b> </p><p> Press space to continue</p> "
+				} else {
+					return ""
+					} 
+				},
+			trial_duration: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return 100000
+				}else if (last_trial < tooFast){
+					return 100000
+				} else{
+					return postTrialGap
+					}
+				},
+				on_finish: function (data){
+				if (online==true){
+					data.subject = username;
+					data.task = currentTask;
+					}
+				}
+			};
+	
+		
+		
+		var i;
+		for (i = 0; i < nblocks; i++) {
+			var start_block = {
+			type: "html-keyboard-response",
+			stimulus: "Start block." +
+						"</p><p> This block has " + test_stim[i].length + " trials. </p>" +
+						"</p><p> Press space bar to continue</p>",
+			choices: [' '],
+			data: { test_part: 'start block' }
+		};
+		
+		var test_procedure = {
+				timeline: [fixation, test, feedback],
+				timeline_variables: test_stim[i],
+				repetitions: 1,
+				randomize_order: false
+			};
+		
+		
+		var end_block = {
+			type: "html-keyboard-response",
+			stimulus: "This is the end of the block. Press space bar to continue",
+			choices: [' '],
+			data: { test_part: 'end block' }
+
+		};
+		
+		var test_blocks = {
+			timeline: [start_block, test_procedure, end_block],
+			randomize_order: false
+		}
+		timeline.push(test_blocks);
+		};
+	
+		
+
+		
+		/* define debrief */
+		// var result = {
+   		//  type: 'call-function',
+   		//  func: function() {
+		// 	var resultJson = jsPsych.data.get().csv();
+		// 	jatos.submitResultData(resultJson)
+		// 	}
+		// }
+		// timeline.push(result);
+		
+		/* define debrief */
+		var debrief_block = {
+ 			type: "html-keyboard-response",
+ 			choices: [' '],
+ 			stimulus: function () {
+ 		 		return "<p>You have now completed the experiment.  </p> " +
+ 						"<p><b> Please press the space bar to finalise results and return to Prolific.</b></p>"+
+				 		"<p> Thank you!</p>"}
+ 		};
+ 		timeline.push(debrief_block);
+
+
+
+
+		/* start the experiment */
+	/* start the experiment */
+		//jatos.onLoad(function() {
+		// 	if (online){
+		// 		username = jatos.urlQueryParameters.PROLIFIC_PID;
+		// 		var currentStudy = jatos.urlQueryParameters.STUDY_ID;
+		// 		currentTask = jatos.urlQueryParameters.TASK_ID;
+
+		// }
+		jsPsych.init({
+ 			timeline: timeline,
+  			//on_finish: function() {
+       	//if (online){
+		//	   var endLink = "https://app.prolific.co/submissions/complete?cc=" + currentStudy;
+		//			jatos.endStudyAndRedirect(endLink);	   
+		  // } else{
+       		//jatos.endStudy();
+		//}
+});
+
+	</script>
+</body>
+
+
+</html>

@@ -1,0 +1,433 @@
+<!doctype html>
+<!-- Example taken from http://www.jspsych.org/tutorials/rt-task/ and adapted for the use with JATOS -->
+<html>
+
+<head>
+    <title> SART </title>
+    <!-- If you use an older version of JATOS (< 3.3.1) you have to use absolutes path for you assets and jatos.js-->
+    <script src="jspsych-6.3.0/jspsych.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-image-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-button-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-call-function.js"></script>        
+    <script src="jspsych-6.3.0/plugins/jspsych-fullscreen.js"></script>
+    <link href="jspsych-6.3.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+</head>
+
+<body>
+</body>
+<script>
+    /* create timeline */
+    var timeline = [];
+    var stim_duration = 250;
+    var fix_duration = 250;
+    var response_button = 'f';
+	var online = true;
+	var username; 
+	var currentTask;
+    if (online == true){
+			// username = jatos.urlQueryParameters.PROLIFIC_PID
+			// console.log(username)
+		}else{
+			var username;
+		}
+
+	timeline.push({
+ 		 type: 'fullscreen',
+ 		 fullscreen_mode: true
+		});
+
+		
+    /* define welcome message trial */
+    if (online){
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin.",
+			data: { subject: username }
+		};
+		}else{
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin."
+		};
+		}
+    timeline.push(welcome);
+
+	var buttonGo = {
+			type: "image-keyboard-response",
+			post_trial_gap: 1000,
+			stimulus: 'setup/keyboard-go.png',
+			prompt: "<br>"+
+					"<br>"+"Please press this button.",
+			on_finish: function(data){
+				response_button = data.response
+			}
+		};
+		
+		
+		
+		var correctButtons = {
+			type: "html-button-response",
+			choices: ['Yes', 'No'],
+			post_trial_gap: 1000,
+			stimulus: function(){
+			return "<p> The response button is <strong>" + response_button.toUpperCase() + "</strong></p>" +
+			"<p> Is this correct? </p>"
+			},
+			on_finish: function(data){
+				goodButtons =  data.response
+			}
+		};		
+		
+		
+		var buttons = {
+			timeline: [ buttonGo, correctButtons],
+			loop_function: function(){
+				key_response = goodButtons;
+     	 		if(key_response == 1){
+       			 return true;
+      			} else {
+        		return false;
+      			}
+    		}
+		}
+		
+		
+  		timeline.push(buttons);
+
+
+    /* define instructions trial */
+    var instructions = {
+        type: "html-keyboard-response",
+        choices: jsPsych.NO_KEYS,
+        stimulus: function(){ 
+        	return "<p>In this experiment, you will be presented with a series of numbers " + 
+            "in the centre of the screen. These numbers will range from 1 to 9.</p>" +
+            "<p>You must press <strong>" + response_button.toUpperCase() + 
+            "</strong> in response to each digit, except when the digit is the number <b>3</b>.</p>" +
+            "<p>If the digit is the number <strong>3, do NOT </strong> press anything. " +
+            "Simply wait for the next number.</p>" +
+			"<p> You can commence the experiment shortly. </p>"},
+        post_trial_gap: 0,
+        trial_duration: 10000,
+        data: {
+                test_part: 'instr',
+            }
+    };
+    timeline.push(instructions);
+
+    var instructions2 = {
+        type: "html-keyboard-response",
+        choices: [" "],
+        stimulus: function(){ 
+        	return "<p>In this experiment, you will be presented with a series of numbers " + 
+            "in the centre of the screen. These numbers will range from 1 to 9.</p>" +
+            "<p>You must press <strong>" + response_button.toUpperCase() + 
+            "</strong> in response to each digit, except when the digit is the number <b>3</b>.</p>" +
+            "<p>If the digit is the number <strong>3, do NOT </strong> press anything. " +
+            "Simply wait for the next number.</p>" +
+            "<p><b>Press space bar to continue.</b></p>" },
+        post_trial_gap: 0,
+        data: {
+                test_part: 'instr',
+            }
+    };
+    timeline.push(instructions2);
+
+
+    var instructions3 = {
+        type: "html-keyboard-response",
+        choices: [" "],
+        stimulus: function(){ 
+            return "<p>Here is an example:</p>" +
+            "<p>If you see the digit <b>1</b>, you would press " + response_button.toUpperCase() + ".</p>" +
+            "<p>If you see the digit <b>4</b>, you would again press " + response_button.toUpperCase() + ".</p>" +
+            "<p>If you see the digit <b>3</b>, <b>DO NOT</b> press "+ response_button.toUpperCase() + ".</p>"+
+            "<p>Let's now try this in the practice block.</p>" +
+            "<p>Please answer as quickly and accurately as possible. </p>" +
+            "<p><b>Press space bar to begin a practice block.</b></p>"},
+		post_trial_gap: 2000,
+        data: {
+                test_part: 'instr',
+            }
+    };
+    timeline.push(instructions3);
+
+
+	/* practice trials */
+	
+	var prac_stimuli = [{
+            stimulus: '<div style="font-size: 100px; font-family: Times New Roman">1</div>',
+            data: {
+                test_part: 'prac',
+            }
+        },
+        {
+            stimulus: '<div style="font-size: 100px; font-family: Times New Roman">2</div>',
+            data: {
+                test_part: 'prac',
+            }
+        },
+        {
+            stimulus: '<div style="font-size: 100px; font-family: Times New Roman">3</div>',
+            data: {
+                test_part: 'no-go_prac',
+            }
+        },
+        {
+            stimulus: '<div style="font-size: 100px; font-family: Times New Roman">4</div>',
+            data: {
+                test_part: 'prac',
+            }
+        },
+        {
+            stimulus: '<div style="font-size: 100px; font-family: Times New Roman">5</div>',
+            data: {
+                test_part: 'prac',
+            }
+        }
+    ];
+
+    var fixationP = {
+			type: 'html-keyboard-response',
+			stimulus: '<div style="font-size:120px;">+</div>',
+			choices:  function(){return [response_button]},
+            trial_duration: fix_duration,       
+            response_ends_trial: false,
+			data: { test_part: 'fixation' }
+		};
+   
+   var prac = {
+        type: "html-keyboard-response",
+        stimulus: jsPsych.timelineVariable('stimulus'),
+        choices: function(){return[response_button]},
+        trial_duration: stim_duration,
+        response_ends_trial: false,
+        data: jsPsych.timelineVariable('data'),
+    }
+   
+    var mask = {
+        type: 'html-keyboard-response',
+        stimulus: " ",
+        choices: function(){
+				if (jsPsych.data.get().last(1).values()[0].rt == null){
+					return [response_button]
+				}else {
+					return jsPsych.NO_KEYS
+					} 
+				},
+        trial_duration: 900,
+        response_ends_trial: false,
+        on_finish: function(data){
+        	data.test_part = "mask"
+            if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(3).values()[0].test_part == "fixation"){
+                data.trial_rt = jsPsych.data.get().last(3).values()[0].rt-fix_duration
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(1).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "prac"){
+                data.trial_rt =  data.rt 
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(1).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "no-go_prac"){
+                data.trial_rt =  data.rt 
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "prac"){
+                data.trial_rt =  data.rt + stim_duration
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(2).values()[0].test_part == "no-go_prac"){
+                data.trial_rt = data.rt + stim_duration
+            }
+            // else {
+            // 	data.trial_rt = jsPsych.data.get().last(2).values()[0].rt
+            // }
+            if (jsPsych.data.get().last(3).values()[0].test_part == "fixation" & jsPsych.data.get().last(3).values()[0].rt > 0 ){
+                data.correct = 2
+            } else if (jsPsych.data.get().last(2).values()[0].test_part == "no-go_prac" & data.trial_rt == null){
+        		data.correct = 1
+        		data.trial = 'no-go_prac'
+        		} else if (jsPsych.data.get().last(2).values()[0].test_part == "no-go_prac" & data.trial_rt > 0){
+        		data.correct = 0
+	       		data.trial = 'no-go_prac'
+    		} else if (jsPsych.data.get().last(2).values()[0].test_part == "prac" & data.trial_rt > 0){
+    			data.correct = 1
+    			data.trial = 'prac'
+    		} else if (jsPsych.data.get().last(2).values()[0].test_part == "prac" & data.trial_rt == null){
+    			data.correct = 0
+    			data.trial = 'prac'
+            }
+            if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(2).values()[0].rt > 0){
+                data.second_rt = jsPsych.data.get().last(2).values()[0].rt
+            } else if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(1).values()[0].rt > 0){
+                data.second_rt = data.rt + stim_duration
+            }
+    	}
+    }
+	
+	var feedback = {
+		type: "html-keyboard-response",
+		data: {test_part: "feedback"},
+		choices: [' '],
+		stimulus: function(){
+			var last_trial = jsPsych.data.get().last(1).values()[0].correct;
+			if (last_trial == 1){
+				return "<b> Correct! </b>" +
+						"<p> Press space bar to continue</p>" 
+				
+			} else{
+				return "<b> Incorrect!</b>" +
+                "<p>Remember to press " + response_button.toUpperCase() + " for all digits <b>except</b> 3.</p>" +
+                        "</p><p> <b>Do not</b> press the button if the digit is a 3. </p>" +
+						"</p><p> Press space bar to continue. </p>" 
+				}
+			}
+		};
+	
+    var prac_procedure = {
+        timeline: [fixationP,prac,mask,feedback],
+        timeline_variables: prac_stimuli,
+        repetitions: 1,
+        randomize_order: true
+    }
+    timeline.push(prac_procedure);
+    
+
+	var start_experiment = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: " <p>You are now ready to start the experiment!" +
+						"</p><p> Press space bar to begin</p>"
+		}
+		timeline.push(start_experiment);
+
+
+
+    var test_stimuli = [{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Times New Roman">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Trebuchet MS">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Helvetica">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 100px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 110px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 120px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 130px; font-family: Arial">9</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">1</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">2</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">3</div>', data: {test_part: 'no-go'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">4</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">5</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">6</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">7</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">8</div>', data: {test_part: 'test'} },{ stimulus: '<div style="font-size: 140px; font-family: Arial">9</div>', data: {test_part: 'test'} }];
+    
+    var fixation = {
+			type: 'html-keyboard-response',
+			stimulus: '<div style="font-size:120px;">+</div>',
+			choices:  function(){return [response_button]},
+            trial_duration: fix_duration,       
+            response_ends_trial: false,
+			data: { test_part: 'fixation' }
+		};
+
+   
+    var test = {
+        type: "html-keyboard-response",
+        stimulus: jsPsych.timelineVariable('stimulus'),
+        choices: function(){return [response_button]},
+        trial_duration: stim_duration,
+        response_ends_trial: false,
+        data: jsPsych.timelineVariable('data'),
+    }
+   
+    var mask = {
+        type: 'html-keyboard-response',
+        stimulus: " ",
+        choices: function(){
+				if (jsPsych.data.get().last(1).values()[0].rt == null){
+					return [response_button]
+				}else {
+					return jsPsych.NO_KEYS
+					} 
+				},
+        trial_duration: 900,
+        response_ends_trial: false,
+        on_finish: function(data){
+        	data.test_part = "mask"
+				if (online==true){
+				data.subject = username;
+				data.task = currentTask;
+				}
+            if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(3).values()[0].test_part == "fixation"){
+                data.trial_rt = jsPsych.data.get().last(3).values()[0].rt-fix_duration
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(1).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "test"){
+                data.trial_rt =  data.rt 
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(1).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "no-go"){
+                data.trial_rt =  data.rt 
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "test"){
+                data.trial_rt =  data.rt + stim_duration
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(2).values()[0].test_part == "no-go"){
+                data.trial_rt = data.rt + stim_duration
+            }
+            // else {
+            // 	data.trial_rt = jsPsych.data.get().last(2).values()[0].rt
+            // }
+            if (jsPsych.data.get().last(3).values()[0].test_part == "fixation" & jsPsych.data.get().last(3).values()[0].rt > 0 ){
+                data.correct = 2
+            } else if (jsPsych.data.get().last(2).values()[0].test_part == "no-go" & data.trial_rt == null){
+        		data.correct = 1
+        		data.trial_type = 'no-go'
+        		} else if (jsPsych.data.get().last(2).values()[0].test_part == "no-go" & data.trial_rt > 0){
+        		data.correct = 0
+	       		data.trial_type = 'no-go'
+    		} else if (jsPsych.data.get().last(2).values()[0].test_part == "test" & data.trial_rt > 0){
+    			data.correct = 1
+    			data.trial_type = 'test'
+    		} else if (jsPsych.data.get().last(2).values()[0].test_part == "test" & data.trial_rt == null){
+    			data.correct = 0
+    			data.trial_type = 'test'
+            }
+            if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(2).values()[0].rt > 0){
+                data.second_rt = jsPsych.data.get().last(2).values()[0].rt
+            } else if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(1).values()[0].rt > 0){
+                data.second_rt = data.rt + stim_duration
+            }
+    	}
+    }
+
+	
+    var test_procedure = {
+        timeline: [fixation,test,mask],
+        timeline_variables: test_stimuli,
+        repetitions: 1,
+        randomize_order: true
+    }
+    timeline.push(test_procedure);
+    
+    
+
+    // var result = {
+   	// 	 type: 'call-function',
+   	// 	 func: function() {
+	// 		var resultJson = jsPsych.data.get().csv();
+	// 		jatos.submitResultData(resultJson)
+	// 		}
+	// 	}
+	// 	timeline.push(result);
+		
+		/* define debrief */
+		var debrief_block = {
+ 			type: "html-keyboard-response",
+ 			choices: [' '],
+ 			stimulus: function () {
+ 		 		return "<p>You have now completed the experiment.  </p> " +
+ 						"<p><b> Please press the space bar to finalise results and return to Prolific.</b></p>"+
+				 		"<p> Thank you!</p>"}
+ 		};
+ 		timeline.push(debrief_block);
+
+
+
+
+		/* start the experiment */
+	/* start the experiment */
+		//jatos.onLoad(function() {
+		// 	if (online){
+		// 		username = jatos.urlQueryParameters.PROLIFIC_PID;
+		// 		var currentStudy = jatos.urlQueryParameters.STUDY_ID;
+		// 		currentTask = jatos.urlQueryParameters.TASK_ID;
+
+		// }
+		jsPsych.init({
+ 			timeline: timeline,
+  			//on_finish: function() {
+       	//if (online){
+		//	   var endLink = "https://app.prolific.co/submissions/complete?cc=" + currentStudy;
+		//			jatos.endStudyAndRedirect(endLink);	   
+		  // } else{
+       		//jatos.endStudy();
+		//}
+});
+</script>
+
+</html>

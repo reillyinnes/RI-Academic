@@ -1,0 +1,1837 @@
+<HTML>
+  <HEAD>
+  </HEAD>
+  <BODY>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+  <button type="button" autofocus id="fullscreenbutton" onclick="openFullscreen();"></button>
+ 
+    <canvas id="dashit" width="800" height="625"></canvas>
+  	<SCRIPT>
+	
+	//DEFINING VARIABLES
+	
+	
+		//INPUT VARIABLES
+		var nBlocks = 1;								//number of blocks
+		var nTrialsEach = 2;							//number of trials of each difficulty
+		var nDots = 10;									//number of dots
+		//var difficultyManipulation = "dots";			//what manipulation is being used; can be set to either "dots" or "speed"
+		var nTrackDots = [1,2,3,4,5];						//number of dots to track
+		var nTrials = nTrackDots.length * nTrialsEach;	//number of trials per block
+		var nDotsToAnswer = 5;							//number of dots to answer about		
+		var allGoRedEventNumber = 30;					//even number when all dots turn red
+		var endMotionTime = 15000;						//motion time in msec
+		var unitMove = 3;								//rate of movement per frame
+		var dotPixelSize = 14;							//dot size (gets /2 later)
+		var circleProportion = 30;						//how much bigger is the circle that holds the dots than nDots
+		var boxWidth = nDots*circleProportion;			//width of the box that contains the circle
+		var boxHeight = nDots*circleProportion;			//height of the box that contains the circle
+		var circleRadius = (nDots*circleProportion)/2;	//radius of the circle that contains the dots
+		var changeInAngleBound = 15;					// boundary on the change in angle for any given frame
+		var frameRate = 1000/15;						//time between frames in msec
+		var exponentialMean = 700;						//200 less than the mean for the exponential distribution used to generate the random fixation time
+		var useParticipantHandedness = false;			//factor in participants handedness? either true or false
+		var useFullScreen = true;			//factor in participants handedness? either true or false
+		var interTrialInterval = 1000;					//ITI
+		var online = false;								//are you running the experiment online?
+		var username; 
+		var pracDifficulty = 2;							//difficulty for the practice block
+		var nPracTrials = 1;							//number of trials in the practice blocks
+		
+		
+		//var DRTprob = .01;							//probability of DRT occurring at any one point in time
+		var DRTrepeatTime = 100;                        //how often the potential DRT occurring function repeats
+		var iteration = 0;
+		var DRTminIterations = 20;
+		var DRTmaxIterations = 40;						//maximum number of "DRTrepeatTime"s until the DRT has to be displayed
+		var maxDRTtrialTime = 1000;						//maximum time that participants have to respond to the DRT
+		
+		var DRTrespRecorded = true;
+		
+
+		
+		var DRTwidth = 1250;
+		var DRTheight = 200;
+		var DRTx = 10;
+		var DRTy = 50;
+
+		
+		
+		
+		//var experimentCoherences = [0,1,2,4,8,16];		//coherences (in nDots) to be used in this experiment
+		//var experimentDirections = ["left", "right"];	//directions to be used in this experiment
+		//var feedbackDisplayTime = 500;					//time spent on feedback
+		//var errorTimeDelay = 1000;						//error timeout
+		//var feedbackDelay;								//feedback delay (hasn't been applied yet)
+		//var angleMotion = 45;							//angle of direction of dots
+		
+		
+		
+		var totalNumberOfTrials = nBlocks*nTrials;		//total trials in experiment
+		
+		
+		
+		
+		
+		//html5 stuff
+		var exp_canvas; 
+		var exp_context; 
+		var nIntervId;
+		
+		//frames per second
+		
+		var averageFrameRate;
+		var fixationTime;
+		
+		
+		var nDifficulties = nTrackDots.length;
+		
+		var useDifficulties = [];
+		for (var i = 0; i < nDifficulties; i++) {
+			useDifficulties[i] = i;
+		}
+		
+		// var difficultyOrder = [];
+		// for (var i = 0; i < nDifficulties; i++) {
+		// 	difficultyOrder[i] = i;
+		// }
+		
+		
+		var useModulusIndex;
+		var currentDifficultyIndex;
+		var currentDifficultyNum;
+		var currentDifficulty;
+		
+		
+		
+		var angleMotion = [];
+		var isBlueDot = [];
+		var dotCurrentColour = [];
+		
+		var changeInAngle;
+		
+		var nPresentedStimCounter;
+		var correctCounter;
+		var remainingDots = [];
+		
+		
+		
+		
+
+		var remainingDirections = [];
+		var randomlyChosenDirection;
+		var dotDirection;
+		var chosenResponse;
+		var eventCount;
+
+		//dotDirection will later become an array
+		var dotIsCoherent = [];
+		var remainingCoherences = [];
+		var randomlyChosenCoherence;
+		var trialCoherence;
+		var correct;
+		var dataOutput = [];
+		var output_txt;
+		
+		var DRTdataOutput = [];
+		var DRToutput_txt;
+		
+		var startDate;
+		var startTime;
+		var endDate;
+		var endTime;
+		var rt;
+		
+		var DRTcurrentDate;
+		var DRTcurrentTime;
+		var DRTstartDate;
+		var DRTstartTime;
+		var DRTendDate;
+		var DRTendTime;
+		var DRTrt;
+		
+		var startMotionDate;
+		var startMotionTime;
+		var currentMotionDate;
+		var currentMotionTime;
+		var totalMotionTime;
+		
+		var experimentStartDate;
+		var experimentStartTime;
+		var trialEndTimeFromStart;
+		var responseTimeFromStart;
+		
+		var blockStartDate;
+		var blockStartTime;
+		var trialEndTimeFromBlockStart;
+		var responseTimeFromBlockStart;
+		
+		
+		/*
+		//for changing coherences experiment
+		var currentCoherence;
+		*/
+		
+		// arrays which contain the X and Y positions of each dot
+		var dotX = [];
+		var dotY = [];
+		var newXPosition;
+		var newYPosition;
+		var hyp;
+		var randomAngle;
+		
+		// "box" refers to the box that contains the dots at all times
+
+		var boxLeftLimit;
+		var boxRightLimit;
+		var boxTopLimit;
+		var boxBottomLimit;
+
+		
+		var nCurrentBlock;
+		var nCurrentTrial;
+		
+		
+		
+		var errorUsernameSendingCounter = 0;
+		var errorDataSendingCounter = 0;
+		
+		
+		
+		//whether a trial is currently going (stops the listener event outside of the trial)
+		var bInTrial = false;
+		var bInInstructions = false;
+		var bInEndOfBlock = false;
+		var bInTrialFeedback = false;
+		var bInConsent = false;
+		//var bInPrepareExperimenter = false;
+		var bInSpecificInstructions = false;
+		var bInDRTInstructions = false;
+		var bInDrtBlock = false;
+		var DRToccurs = false;
+		
+		var bInMovingDots = false;
+		var startedInMovingDots = false;
+
+		var elem = dashit; // Make the body go full screen.
+		function openFullscreen() {
+  		if (elem.requestFullscreen) {
+   			elem.requestFullscreen();
+  		} else if (elem.webkitRequestFullscreen) { /* Safari */
+    		elem.webkitRequestFullscreen();
+  		} else if (elem.msRequestFullscreen) { /* IE11 */
+    		elem.msRequestFullscreen();
+  			}
+		}
+		
+		if (useParticipantHandedness == true) {
+			var bInHandedness = false;
+		}
+		
+					//"listen" for responses being pressed (should also add IE version, see: http://stackoverflow.com/questions/4416505/how-to-take-keyboard-input-in-javascript")
+			document.addEventListener('keydown', function responseKeys(event) {
+				if (event.repeat) { return }
+				  //should "responseKeys" be there?
+				if (event.keyCode == 191) {
+					event.preventDefault();
+				}
+				if (bInTrial == true) {
+					
+					if (useParticipantHandedness == true) {
+						
+						if (participantHandedness == "left") {
+							if (event.keyCode == 81) {
+								event.preventDefault();
+								bInTrial = false;
+								//stop timer
+								endDate = new Date();
+								//rt = timer value
+								startTime = startDate.getTime();
+								endTime = endDate.getTime();
+								rt = endTime - startTime;
+							
+								chosenResponse = "yes";
+						
+								//stops the repeating of the drawing function
+								//clearInterval(nIntervId);
+								//feedback();
+						
+								responseFromStart = endTime - experimentStartTime;
+								responseFromBlockStart = endTime - blockStartTime;
+						
+								storeResults();
+						
+							}
+							//else if (event.keyCode == 190) {
+							else if (event.keyCode == 87) {
+								event.preventDefault();
+								bInTrial = false;
+								//stop timer
+								endDate = new Date();
+								//rt = timer value
+								startTime = startDate.getTime();
+								endTime = endDate.getTime();
+								rt = endTime - startTime;
+							
+								chosenResponse = "no";
+								//clearInterval(nIntervId);
+								//feedback();
+						
+								responseFromStart = endTime - experimentStartTime;
+								responseFromBlockStart = endTime - blockStartTime;
+						
+								storeResults();
+
+							}
+						}
+						else if (participantHandedness == "right") {
+							if (event.keyCode == 79) {
+								event.preventDefault();
+								bInTrial = false;
+								//stop timer
+								endDate = new Date();
+								//rt = timer value
+								startTime = startDate.getTime();
+								endTime = endDate.getTime();
+								rt = endTime - startTime;
+							
+								chosenResponse = "yes";
+						
+								//stops the repeating of the drawing function
+								//clearInterval(nIntervId);
+								//feedback();
+						
+								responseFromStart = endTime - experimentStartTime;
+								responseFromBlockStart = endTime - blockStartTime;
+						
+								storeResults();
+						
+							}
+							//else if (event.keyCode == 190) {
+							else if (event.keyCode == 80) {
+								event.preventDefault();
+								bInTrial = false;
+								//stop timer
+								endDate = new Date();
+								//rt = timer value
+								startTime = startDate.getTime();
+								endTime = endDate.getTime();
+								rt = endTime - startTime;
+							
+								chosenResponse = "no";
+								//clearInterval(nIntervId);
+								//feedback();
+						
+								responseFromStart = endTime - experimentStartTime;
+								responseFromBlockStart = endTime - blockStartTime;
+						
+								storeResults();
+
+							}
+						}
+						
+					}
+					
+					
+					
+					else {
+						
+						if (event.keyCode == 79) {
+							event.preventDefault();
+							bInTrial = false;
+							//stop timer
+							endDate = new Date();
+							//rt = timer value
+							startTime = startDate.getTime();
+							endTime = endDate.getTime();
+							rt = endTime - startTime;
+						
+							chosenResponse = "yes";
+						
+							//stops the repeating of the drawing function
+							//clearInterval(nIntervId);
+							//feedback();
+						
+							responseFromStart = endTime - experimentStartTime;
+							responseFromBlockStart = endTime - blockStartTime;
+						
+							storeResults();
+						
+						}
+						//else if (event.keyCode == 190) {
+						else if (event.keyCode == 80) {
+							//event.preventDefault();
+							bInTrial = false;
+							//stop timer
+							endDate = new Date();
+							//rt = timer value
+							startTime = startDate.getTime();
+							endTime = endDate.getTime();
+							rt = endTime - startTime;
+						
+							chosenResponse = "no";
+							//clearInterval(nIntervId);
+							//feedback();
+						
+							responseFromStart = endTime - experimentStartTime;
+							responseFromBlockStart = endTime - blockStartTime;
+						
+							storeResults();
+
+						}
+						
+						
+						
+					}
+					
+				}
+				//to move on from instructions and end of block
+				
+				
+				else if (bInInstructions == true) {
+					if (event.keyCode == 32) {
+						event.preventDefault();
+						bInInstructions = false;
+						specificInstructions();
+						//startOfBlock();
+					}
+				}
+				
+				else if (bInSpecificInstructions == true) {
+					if (event.keyCode == 32) {
+						event.preventDefault();
+						bInSpecificInstructions = false;
+						startOfBlock();
+					}
+				}
+				
+				else if (bInEndOfBlock == true) {
+					if (event.keyCode == 32) {
+						event.preventDefault();
+						bInEndOfBlock = false;
+						specificInstructions();
+						//startOfBlock();
+					}
+				}
+				
+				else if (bInTrialFeedback == true) {
+					if (event.keyCode == 32) {
+						event.preventDefault();
+						bInTrialFeedback = false;
+						endOfTrial();
+					}
+				}
+				
+				else if (bInConsent == true) {
+					if (event.keyCode == 89) {
+						event.preventDefault();
+						bInConsent = false;
+						DRTinstructions();
+					}
+					else if (event.keyCode == 78) {
+					setTimeout(function() {
+       		window.location.href = "https://newcastle.sona-systems.com";
+               }, 100);
+					}
+				}
+							
+				
+				else if (bInDRTInstructions == true) {
+					if (event.keyCode == 32) {
+						event.preventDefault();
+						bInDRTInstructions = false;
+						instructions();
+					}
+				}
+				
+				else if (useFullScreen == true) {
+					if (bInHandedness == true) {
+						if (event.keyCode == 32) {
+							//event.preventDefault();
+							bInHandedness = false;
+							//participantHandedness = "left";
+							DRTinstructions();
+							//DRTinstructions();
+							//instructions();
+						}
+						// else if (event.keyCode == 191) {
+						// 	event.preventDefault();
+						// 	bInHandedness = false;
+						// 	participantHandedness = "right";
+						// 	consent();
+						// 	//DRTinstructions();
+						// 	//instructions();
+						// }
+					}
+					
+				}
+				
+				if (bInDrtBlock == true) {
+				
+					if (useParticipantHandedness == true) {
+						if (participantHandedness == "left") {
+							
+							if (event.keyCode == 89) {     //MAYBE CHANGE TO 'Q'?
+								if (DRToccurs == true) {
+									//log that DRT was responded to, that it was actually there, and the RT (also log the block and trial number, and the system time to match it up with the trials)
+									DRToccurs = false
+									//console.log(DRToccurs);
+									removeDRT(DRTx,DRTy,DRTwidth,DRTheight);
+									DRTendDate = new Date();
+									DRTendTime = DRTendDate.getTime();
+									DRTrt = DRTendTime - DRTstartTime;
+							
+									// name the DRT shit
+									// DRToutput_txt = "\nblkNum" + "\t" + "trlNum" + "\t" + "dotsToTrack" + "\t" + "numberofDots" + "\t" + "DRTrt" + "\t" + "result" + "\t" + "DRTstartDate" + "\t" + "DRTstartTime" + "\t" + "DRTendDate" + "\t" + "DRTendTime" + "\t" + "inTrial\n";
+									
+									DRTrespRecorded = true;
+									
+									if (nCurrentBlock > 0) {
+										DRTdataOutput.push(username + "\t" + username + "\t" + nCurrentBlock + "\t" + nCurrentTrial + "\t" + currentDifficulty + "\t" + nDots + "\t" + DRTrt + "\t" + "hit" + "\t" + DRTstartDate + "\t" + DRTstartTime + "\t" + DRTendDate + "\t" + DRTendTime + "\t" + startedInMovingDots + "\t" + bInMovingDots + "\t" + bInTrial);
+									}
+								} else {
+								
+									if (DRTrespRecorded) {
+										
+										DRTrespRecorded = true;
+										
+										//log the false alarm (also log the block and trial number, and the system time to match it up with the trials)
+										FApressDate = new Date();
+										FApressTime = FApressDate.getTime();
+										if (nCurrentBlock > 0) {
+											DRTdataOutput.push(username + "\t" + username + "\t" + nCurrentBlock + "\t" + nCurrentTrial + "\t" + currentDifficulty + "\t" + nDots + "\t" + DRTrt + "\t" + "falseAlarm" + "\t" + "N/A" + "\t" + "N/A" + "\t" + FApressDate + "\t" + FApressTime + "\t" + startedInMovingDots + "\t" + bInMovingDots + "\t" + bInTrial);
+										}
+									
+									} else if (DRTrespRecorded == false) {
+										
+										
+										DRTendDate = new Date();
+										DRTendTime = DRTendDate.getTime();
+										DRTrt = DRTendTime - DRTstartTime;
+							
+										// name the DRT shit
+										// DRToutput_txt = "\nblkNum" + "\t" + "trlNum" + "\t" + "dotsToTrack" + "\t" + "numberofDots" + "\t" + "DRTrt" + "\t" + "result" + "\t" + "DRTstartDate" + "\t" + "DRTstartTime" + "\t" + "DRTendDate" + "\t" + "DRTendTime" + "\t" + "inTrial\n";
+									
+										DRTrespRecorded = true;
+									
+										if (nCurrentBlock > 0) {
+											DRTdataOutput.push(username + "\t" + username + "\t" + nCurrentBlock + "\t" + nCurrentTrial + "\t" + currentDifficulty + "\t" + nDots + "\t" + DRTrt + "\t" + "hit" + "\t" + DRTstartDate + "\t" + DRTstartTime + "\t" + DRTendDate + "\t" + DRTendTime + "\t" + startedInMovingDots + "\t" + bInMovingDots + "\t" + bInTrial);
+										}
+									}
+									
+								}
+							}
+							
+						}
+						else if (participantHandedness == "right") {
+							
+							if (event.keyCode == 84) {     //MAYBE CHANGE TO 'Q'?
+								if (DRToccurs == true) {
+									//log that DRT was responded to, that it was actually there, and the RT (also log the block and trial number, and the system time to match it up with the trials)
+									DRToccurs = false
+									//console.log(DRToccurs);
+									removeDRT(DRTx,DRTy,DRTwidth,DRTheight);
+									DRTendDate = new Date();
+									DRTendTime = DRTendDate.getTime();
+									DRTrt = DRTendTime - DRTstartTime;
+							
+									// name the DRT shit
+									
+									DRTrespRecorded = true;
+									
+									if (nCurrentBlock > 0) {
+										DRTdataOutput.push(username + "\t" + username + "\t" + nCurrentBlock + "\t" + nCurrentTrial + "\t" + currentDifficulty + "\t" + nDots + "\t" + DRTrt + "\t" + "hit" + "\t" + DRTstartDate + "\t" + DRTstartTime + "\t" + DRTendDate + "\t" + DRTendTime + "\t" + startedInMovingDots + "\t" + bInMovingDots + "\t" + bInTrial);
+									}
+								} else {
+								
+									if (DRTrespRecorded) {
+										
+										DRTrespRecorded = true;
+										
+										//log the false alarm (also log the block and trial number, and the system time to match it up with the trials)
+										FApressDate = new Date();
+										FApressTime = FApressDate.getTime();
+										if (nCurrentBlock > 0) {
+											DRTdataOutput.push(username + "\t" + username + "\t" + nCurrentBlock + "\t" + nCurrentTrial + "\t" + currentDifficulty + "\t" + nDots + "\t" + DRTrt + "\t" + "falseAlarm" + "\t" + "N/A" + "\t" + "N/A" + "\t" + FApressDate + "\t" + FApressTime + "\t" + startedInMovingDots + "\t" + bInMovingDots + "\t" + bInTrial);
+										}
+									
+									} else if (DRTrespRecorded == false) {
+									
+										DRTendDate = new Date();
+										DRTendTime = DRTendDate.getTime();
+										DRTrt = DRTendTime - DRTstartTime;
+							
+										// name the DRT shit
+										// DRToutput_txt = "\nblkNum" + "\t" + "trlNum" + "\t" + "dotsToTrack" + "\t" + "numberofDots" + "\t" + "DRTrt" + "\t" + "result" + "\t" + "DRTstartDate" + "\t" + "DRTstartTime" + "\t" + "DRTendDate" + "\t" + "DRTendTime" + "\t" + "inTrial\n";
+										
+										DRTrespRecorded = true;
+										
+										if (nCurrentBlock > 0) {
+											DRTdataOutput.push(username + "\t" + username + "\t" + nCurrentBlock + "\t" + nCurrentTrial + "\t" + currentDifficulty + "\t" + nDots + "\t" + DRTrt + "\t" + "hit" + "\t" + DRTstartDate + "\t" + DRTstartTime + "\t" + DRTendDate + "\t" + DRTendTime + "\t" + startedInMovingDots + "\t" + bInMovingDots + "\t" + bInTrial);
+										}
+									}
+									
+								}
+							}
+							
+						}
+						
+					
+					} else {
+						if (event.keyCode == 81) {     //MAYBE CHANGE TO 'Q'?
+								if (DRToccurs == true) {
+									//log that DRT was responded to, that it was actually there, and the RT (also log the block and trial number, and the system time to match it up with the trials)
+									DRToccurs = false
+									//console.log(DRToccurs);
+									removeDRT(DRTx,DRTy,DRTwidth,DRTheight);
+									DRTendDate = new Date();
+									DRTendTime = DRTendDate.getTime();
+									DRTrt = DRTendTime - DRTstartTime;
+							
+									// name the DRT shit
+									
+									DRTrespRecorded = true;
+									
+									if (nCurrentBlock > 0) {
+										DRTdataOutput.push(username + "\t" + username + "\t" + nCurrentBlock + "\t" + nCurrentTrial + "\t" + currentDifficulty + "\t" + nDots + "\t" + DRTrt + "\t" + "hit" + "\t" + DRTstartDate + "\t" + DRTstartTime + "\t" + DRTendDate + "\t" + DRTendTime + "\t" + startedInMovingDots + "\t" + bInMovingDots + "\t" + bInTrial);
+									}
+								} else {
+								
+									if (DRTrespRecorded) {
+										
+										DRTrespRecorded = true;
+										
+										//log the false alarm (also log the block and trial number, and the system time to match it up with the trials)
+										FApressDate = new Date();
+										FApressTime = FApressDate.getTime();
+										if (nCurrentBlock > 0) {
+											DRTdataOutput.push(username + "\t" + username + "\t" + nCurrentBlock + "\t" + nCurrentTrial + "\t" + currentDifficulty + "\t" + nDots + "\t" + DRTrt + "\t" + "falseAlarm" + "\t" + "N/A" + "\t" + "N/A" + "\t" + FApressDate + "\t" + FApressTime + "\t" + startedInMovingDots + "\t" + bInMovingDots + "\t" + bInTrial);
+										}
+									
+									} else if (DRTrespRecorded == false) {
+									
+										DRTendDate = new Date();
+										DRTendTime = DRTendDate.getTime();
+										DRTrt = DRTendTime - DRTstartTime;
+							
+										// name the DRT shit
+										// DRToutput_txt = "\nblkNum" + "\t" + "trlNum" + "\t" + "dotsToTrack" + "\t" + "numberofDots" + "\t" + "DRTrt" + "\t" + "result" + "\t" + "DRTstartDate" + "\t" + "DRTstartTime" + "\t" + "DRTendDate" + "\t" + "DRTendTime" + "\t" + "inTrial\n";
+										
+										DRTrespRecorded = true;
+										
+										if (nCurrentBlock > 0) {
+											DRTdataOutput.push(username + "\t" + username + "\t" + nCurrentBlock + "\t" + nCurrentTrial + "\t" + currentDifficulty + "\t" + nDots + "\t" + DRTrt + "\t" + "hit" + "\t" + DRTstartDate + "\t" + DRTstartTime + "\t" + DRTendDate + "\t" + DRTendTime + "\t" + startedInMovingDots + "\t" + bInMovingDots + "\t" + bInTrial);
+										}
+									}
+									
+								}
+							}
+						}
+					
+					
+				}
+				
+				
+				
+			}, true);
+			
+
+		
+	//SETTING UP FUNCTIONS
+	
+	
+		//set up canvas and context (html5 stuff, gives the javascript a place to work), create black background
+		function initialise() {
+			nCurrentBlock = 0;
+			exp_canvas = document.getElementById("dashit");
+			exp_context = exp_canvas.getContext("2d");
+			exp_canvas.width = document.body.clientWidth;
+			exp_canvas.height = document.body.clientHeight;
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			boxLeftLimit = exp_canvas.width/2 - boxWidth/2;
+			boxRightLimit = exp_canvas.width/2 + boxWidth/2;
+			boxTopLimit = exp_canvas.height/2 - boxHeight/2;
+			boxBottomLimit = exp_canvas.height/2 + boxHeight/2;
+			
+			
+			//shuffle(difficultyOrder);
+			
+			//console.log(difficultyOrder);
+			
+			if (online == true) {
+			
+				
+				//check
+				if (nBlocks % nDifficulties != 0) {
+					error(00002);
+				}
+				else {
+					getUsername();
+				}
+			
+
+										
+				function getUsername() {
+					if (username == null) {
+					username = prompt("Please enter your 5 digit SONA ID");
+						getUsername();
+					}
+				
+					else if (username.length != 5) {
+						username = prompt("Please enter your 5 digit SONA ID");
+						getUsername();
+					}
+				
+					else if (username != null && username.length == 5) {
+						confirmUsername();
+					}
+				}
+										
+
+				function confirmUsername() {
+					if (username.length!= 5) {
+						alert("Please ensure your username is 5 numerical characters long");
+						getUsername();
+					}
+					else {
+						handedness();
+					}
+				}
+			} 
+			else {
+				if (useFullScreen == true) {
+					handedness();
+				}
+				else {
+					instructions();
+				}
+			}
+			
+		}
+		
+		function consent() {
+		
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="24px Verdana";
+			exp_context.textAlign = "center";
+			exp_context.fillText("IMPORTANT: Consent Notice",exp_canvas.width/2,exp_canvas.height/4-100);
+			//exp_context.fillText("Welcome to the experiment!",exp_canvas.width/2,exp_canvas.height/4);
+			exp_context.fillText("If you agree to participate in this study, you will be asked to do a perceptual task.",exp_canvas.width/2,exp_canvas.height/4+100);
+			exp_context.fillText("Your data will be recorded anonymously.",exp_canvas.width/2,exp_canvas.height/4+125);
+			exp_context.fillText("If you agree to participate in the study, press the 'Y' key.",exp_canvas.width/2,exp_canvas.height/4+200);
+			exp_context.fillText("Alternatively, if you do not consent to participate, please press the 'N' key.",exp_canvas.width/2,exp_canvas.height/4+250);
+			bInConsent = true;
+		}
+		
+		
+		
+		function handedness() {
+		
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="18px Verdana";
+			exp_context.textAlign = "center";
+			exp_context.fillText("Welcome to the experiment!",exp_canvas.width/2,exp_canvas.height/4);
+			exp_context.fillText("To continue, the experiment will go to full screen.",exp_canvas.width/2,exp_canvas.height/4+100);
+			//exp_context.fillText("for the experiment.",exp_canvas.width/2,exp_canvas.height/4+125);
+			//exp_context.fillText("If you are left handed, please press the 'Z' key.",exp_canvas.width/2,exp_canvas.height/4+175);
+			exp_context.fillText("Press the SPACEBAR to enter full screen and begin the study.",exp_canvas.width/2,exp_canvas.height/4+200);
+			bInHandedness = true;
+		}
+		
+		function DRTinstructions () {
+			
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="18px Verdana";
+			exp_context.textAlign = "center";
+			exp_context.fillText("DRT INSTRUCTIONS",exp_canvas.width/2,exp_canvas.height/4-75);
+			exp_context.fillText("In this experiment, we examine your ability to detect and respond to a red light at the side of the display.",exp_canvas.width/2,exp_canvas.height/4);
+			
+			if(useParticipantHandedness==true){
+				if (participantHandedness == "left") {
+					exp_context.fillText("It is your job to indicate each time you see this stimulus appear by pressing the 'Y' key on your keyboard.",exp_canvas.width/2,exp_canvas.height/4+50);
+				}
+				else if (participantHandedness == "right") {
+					exp_context.fillText("It is your job to indicate each time you see this stimulus appear by pressing the 'T' key on your keyboard.",exp_canvas.width/2,exp_canvas.height/4+50);
+				}
+			}else{
+				exp_context.fillText("It is your job to indicate each time you see this stimulus appear by pressing the Q key on your keyboard.",exp_canvas.width/2,exp_canvas.height/4+50);
+			}
+
+			
+			exp_context.fillText("You should keep the index finger on this key at all times, except during the designated between block breaks.",exp_canvas.width/2,exp_canvas.height/4+75);
+			exp_context.fillText("The stimulus will stop after you press the key or after a certain time if not pressed.",exp_canvas.width/2,exp_canvas.height/4+100);
+			exp_context.fillText("Respond as quickly as possible to the red signal. However, ensure that you are also as accurate as possible on the dot tracking task",exp_canvas.width/2,exp_canvas.height/4+175);
+			exp_context.fillText("Press the spacebar key when you are ready to continue.",exp_canvas.width/2,exp_canvas.height/4+300);
+			bInDRTInstructions = true;
+			
+		}
+		
+		
+		
+		function instructions () {			
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			
+			
+			if (useParticipantHandedness == true) {
+			
+				if (participantHandedness == "left") {
+			
+					exp_context.fillStyle = "rgb(255,255,255)";
+					exp_context.font="18px Verdana";
+					exp_context.textAlign = "center";
+					exp_context.fillText("In this experiment, we examine your ability to track some moving dots.",exp_canvas.width/2,exp_canvas.height/4);
+					exp_context.fillText("At each trial, a cloud of dots will appear in the centre of the screen. Some of the dots will",exp_canvas.width/2,exp_canvas.height/4+50);
+					exp_context.fillText("be blue, and the rest will be red. The BLUE dots are the target to watch. After 3 seconds all",exp_canvas.width/2,exp_canvas.height/4+75);
+					exp_context.fillText("of the dots will change to red. ",exp_canvas.width/2,exp_canvas.height/4+100);
+					exp_context.fillText("Your job is to continue to track the dots which were originally blue. You will then be asked if certain dots",exp_canvas.width/2,exp_canvas.height/4+150);
+					exp_context.fillText("were those which were originally BLUE. ",exp_canvas.width/2,exp_canvas.height/4+175);
+					exp_context.fillText("To select 'yes' press the 'Q' key, and to select 'no' press the 'W' key.",exp_canvas.width/2,exp_canvas.height/4+225);
+					exp_context.fillText("Respond as accurately as possible.",exp_canvas.width/2,exp_canvas.height/4+250);
+					exp_context.fillText("There are " + nTrials + " trials. Therefore, you will make a total of " + totalNumberOfTrials + " decisions.",exp_canvas.width/2,exp_canvas.height/4+300);			
+					exp_context.fillText("Press the spacebar key when you are ready to begin the experiment.",exp_canvas.width/2,exp_canvas.height/4+375);
+					bInInstructions = true;
+			
+				}
+			
+				else if (participantHandedness == "right") {
+					
+					exp_context.fillStyle = "rgb(255,255,255)";
+					exp_context.font="18px Verdana";
+					exp_context.textAlign = "center";
+					exp_context.fillText("In this experiment, we examine your ability to track some moving dots.",exp_canvas.width/2,exp_canvas.height/4);
+					exp_context.fillText("At each trial, a cloud of dots will appear in the centre of the screen. Some of the dots will",exp_canvas.width/2,exp_canvas.height/4+50);
+					exp_context.fillText("be blue, and the rest will be red. The BLUE dots are the target to watch. After 3 seconds all",exp_canvas.width/2,exp_canvas.height/4+75);
+					exp_context.fillText("of the dots will change to red. ",exp_canvas.width/2,exp_canvas.height/4+100);
+					exp_context.fillText("Your job is to continue to track the dots which were originally blue. You will then be asked if certain dots",exp_canvas.width/2,exp_canvas.height/4+150);
+					exp_context.fillText("were those which were originally BLUE. ",exp_canvas.width/2,exp_canvas.height/4+175);
+					exp_context.fillText("To select 'yes' press the 'O' key, and to select 'no' press the 'P' key.",exp_canvas.width/2,exp_canvas.height/4+225);
+					exp_context.fillText("Respond as accurately as possible.",exp_canvas.width/2,exp_canvas.height/4+250);
+					exp_context.fillText("There are  " + nTrials + " trials. Therefore, you will make a total of " + totalNumberOfTrials + " decisions.",exp_canvas.width/2,exp_canvas.height/4+300);			
+					exp_context.fillText("Press the spacebar key when you are ready to begin the experiment.",exp_canvas.width/2,exp_canvas.height/4+375);
+					bInInstructions = true;
+				
+				}
+				
+			}
+			
+			
+			else {
+				
+				exp_context.fillStyle = "rgb(255,255,255)";
+					exp_context.font="18px Verdana";
+					exp_context.textAlign = "center";
+					exp_context.fillText("In this experiment, we examine your ability to track some moving dots.",exp_canvas.width/2,exp_canvas.height/4);
+					exp_context.fillText("At each trial, a cloud of dots will appear in the centre of the screen. Some of the dots will",exp_canvas.width/2,exp_canvas.height/4+50);
+					exp_context.fillText("be blue, and the rest will be red. The BLUE dots are the target to watch. After 3 seconds all",exp_canvas.width/2,exp_canvas.height/4+75);
+					exp_context.fillText("of the dots will change to red. ",exp_canvas.width/2,exp_canvas.height/4+100);
+					exp_context.fillText("Your job is to continue to track the dots which were originally blue. You will then be asked if certain dots",exp_canvas.width/2,exp_canvas.height/4+150);
+					exp_context.fillText("were those which were originally BLUE. ",exp_canvas.width/2,exp_canvas.height/4+175);
+					exp_context.fillText("To select 'yes' press the 'O' key, and to select 'no' press the 'P' key.",exp_canvas.width/2,exp_canvas.height/4+225);
+					exp_context.fillText("Respond as accurately as possible.",exp_canvas.width/2,exp_canvas.height/4+250);
+					exp_context.fillText("There are " + nTrials + " trials. Therefore, you will make a total of " + totalNumberOfTrials + " decisions.",exp_canvas.width/2,exp_canvas.height/4+300);			
+					exp_context.fillText("Press the spacebar key when you are ready to begin the experiment.",exp_canvas.width/2,exp_canvas.height/4+375);
+					bInInstructions = true;
+				
+			}
+			
+			
+		}
+		
+		
+		
+		function specificInstructions () {
+		
+			if (nCurrentBlock > 0) {
+				// useModulusIndex = nCurrentBlock % nDifficulties;
+			
+				// currentDifficultyIndex = difficultyOrder[useModulusIndex];
+			
+				// currentDifficultyNum = useDifficulties[currentDifficultyIndex];
+				// currentDifficulty = nTrackDots[currentDifficultyIndex];
+				const makeRepeated = (arr, repeats) => [].concat(...Array.from({ length: repeats }, () => arr));
+				difficultyArray = makeRepeated(nTrackDots, nTrialsEach);
+				shuffle(difficultyArray);
+				//console.log(difficultyArray);
+
+
+			}
+			else {
+				const makeRepeated = (arr, repeats) => [].concat(...Array.from({ length: repeats }, () => arr));
+				difficultyArray = makeRepeated(pracDifficulty,nPracTrials);
+				//console.log(difficultyArray);
+				
+			}
+			
+			
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			
+			/*
+			for (var i = 0; i < nDifficulties; i++) {
+				
+			}
+			*/
+			
+			Array.prototype.max = function() {
+  				return Math.max.apply(null, this);
+				};
+
+			Array.prototype.min = function() {
+  				return Math.min.apply(null, this);
+				};
+
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="18px Verdana";
+			exp_context.textAlign = "center";
+			exp_context.fillText("For this block, you will be presented with between " + Math.min.apply(null, nTrackDots) + " and " + Math.max.apply(null, nTrackDots) + " blue dots before the start of the trial, which",exp_canvas.width/2,exp_canvas.height/4);
+			exp_context.fillText("you will need to track until motion stops, where you will be asked to identify whether certain dots were tracked or not",exp_canvas.width/2,exp_canvas.height/4+25);
+			exp_context.fillText("at the start of the trial.",exp_canvas.width/2,exp_canvas.height/4+50);
+			//exp_context.fillText("Immediately after these numbers have been displayed, the block of dot judgment trials will begin.",exp_canvas.width/2,exp_canvas.height/4+100);
+				
+			/*
+			if (currentCondition == "high") {
+				
+				exp_context.fillStyle = "rgb(255,255,255)";
+				exp_context.font="18px Verdana";
+				exp_context.textAlign = "center";
+				exp_context.fillText("For this block, you will be presented with " + highNumItems + " numbers before the start of the block, which",exp_canvas.width/2,exp_canvas.height/4);
+				exp_context.fillText("you will need to remember for the end of the block, where you will be asked recognise which numbers were shown",exp_canvas.width/2,exp_canvas.height/4+25);
+				exp_context.fillText("at the start of the block.",exp_canvas.width/2,exp_canvas.height/4+50);
+				//exp_context.fillText("Immediately after these numbers have been displayed, the block of dot judgment trials will begin.",exp_canvas.width/2,exp_canvas.height/4+100);
+				
+				
+			} else if (currentCondition == "low") {
+				
+				exp_context.fillStyle = "rgb(255,255,255)";
+				exp_context.font="18px Verdana";
+				exp_context.textAlign = "center";
+				exp_context.fillText("For this block, you will be presented with " + lowNumItems + " numbers before the start of the block, which",exp_canvas.width/2,exp_canvas.height/4);
+				exp_context.fillText("you will need to remember for the end of the block, where you will be asked recognise which numbers were shown",exp_canvas.width/2,exp_canvas.height/4+25);
+				exp_context.fillText("at the start of the block.",exp_canvas.width/2,exp_canvas.height/4+50);
+				//exp_context.fillText("Immediately after these numbers have been displayed, the block of dot judgment trials will begin.",exp_canvas.width/2,exp_canvas.height/4+100);
+				
+				
+			}
+			*/
+			
+			setTimeout(waitForAFewSeconds,5000);
+		}
+		
+		function waitForAFewSeconds () {
+			
+			exp_context.fillText("Press the spacebar key when you are ready to begin the next block of trials.",exp_canvas.width/2,exp_canvas.height/4+175);
+			bInSpecificInstructions = true;
+		}
+		
+		
+		
+		function startOfBlock () {
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			nCurrentTrial = 1;
+			
+			
+			
+			/*
+			remainingDirections = [];
+			remainingCoherences = [];
+			function fillArray (containerArr, toBeFilledArr) {
+				var containerArrLen = containerArr.length;
+				for (var item = 0; item < containerArrLen; item++) {
+					for (var fill = 0; fill < nTrials/containerArrLen; fill++) {
+						toBeFilledArr.push(username + "t" + containerArr[item]);
+					}
+				}
+			}
+			fillArray(experimentCoherences,remainingCoherences);
+			fillArray(experimentDirections,remainingDirections);
+			*/
+			
+			//prepareExperimenterForDRT();
+			
+			if (nCurrentBlock == 1) {
+				experimentStartDate = new Date();
+				experimentStartTime = experimentStartDate.getTime();
+			}
+						
+			blockStartDate = new Date();
+			blockStartTime = blockStartDate.getTime();
+			
+					
+			makeInitialDotValues();
+			
+		}
+		
+		/*
+		function prepareExperimenterForDRT () {
+			
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="18px Verdana";
+			exp_context.textAlign = "center";
+			exp_context.fillStyle = "rgb(255,0,0)";
+			exp_context.fillText("The judgment task is about to begin. Please ask the experimenter to start the DRT when you are ready to continue.",exp_canvas.width/2,exp_canvas.height/4+50);
+			exp_context.fillStyle = "rgb(255,255,255)";
+			//exp_context.fillText("Press the spacebar key when you are ready to begin the judgment task, and have asked the experimenter to start the DRT.",exp_canvas.width/2,exp_canvas.height/4+125);
+			
+			//bInPrepareExperimenter = true;
+			
+			setTimeout(waitForIt,2000);
+		}
+		
+		function waitForIt () {
+			
+			exp_context.fillText("Press the spacebar key when you are ready to begin the next block of trials.",exp_canvas.width/2,exp_canvas.height/4+125);
+			bInPrepareExperimenter = true;
+		}
+		*/
+		
+		function endOfBlock () {
+			nCurrentBlock++;
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="18px Verdana";
+			exp_context.textAlign = "center";
+			exp_context.fillText("End of block. Please take a short break.",exp_canvas.width/2,exp_canvas.height/4+50);
+			exp_context.fillText("Press the spacebar key when you are ready to begin the next block.",exp_canvas.width/2,exp_canvas.height/4+125);
+			
+			
+			
+			bInEndOfBlock = true;
+			//startOfBlock();
+		}
+		
+		
+
+		function DRT() {
+			if (DRToccurs) {
+				//DRT is already occurring
+				
+				drawDRT(DRTx,DRTy,DRTwidth,DRTheight);
+				
+				DRTcurrentDate = new Date();
+				DRTcurrentTime = DRTcurrentDate.getTime();
+				DRTcurrent = DRTcurrentTime - DRTstartTime;
+				
+				if (DRTcurrent > maxDRTtrialTime) {
+					DRToccurs = false
+					removeDRT(DRTx,DRTy,DRTwidth,DRTheight);
+					//record it as a DRT miss
+				}
+				
+			} else {
+				//see if DRT will occur
+				iteration++;
+				if (iteration >= DRTminIterations) {
+					referenceNumber=Math.random()
+				
+					var DRTprob = 1/(DRTmaxIterations-iteration+1)
+				
+					if (DRTprob>referenceNumber) {
+						iteration = 0;
+						DRToccurs = true;
+						DRTstartDate = new Date();
+						DRTstartTime = DRTstartDate.getTime();
+					}
+					if (DRToccurs) {
+						//DRT started occurring in this iteration
+						if (DRTrespRecorded == false) {
+							if (nCurrentBlock > 0) {
+								DRTdataOutput.push(username + "\t" + username + "\t" + nCurrentBlock + "\t" + nCurrentTrial + "\t" + currentDifficulty + "\t" + nDots + "\t" + (maxDRTtrialTime+DRTrepeatTime) + "\t" + "miss" + "\t" + DRTstartDate + "\t" + DRTstartTime + "\t" + "N/A" + "\t" + "N/A" + "\t" + startedInMovingDots + "\t" + bInMovingDots + "\t" + bInTrial);
+							}
+						}
+						
+						DRTrespRecorded = false;
+						
+						if (bInMovingDots) {
+							startedInMovingDots = true;
+						} else {
+							startedInMovingDots = false;
+						}
+						
+						drawDRT(DRTx,DRTy,DRTwidth,DRTheight);
+					}
+				}
+			}
+		}
+		
+		function drawDRT(x,y,width,height) {
+
+			var ctx = document.getElementById('dashit').getContext('2d');
+			var rightx = ctx.canvas.width - x - DRTheight;
+			exp_context.fillStyle = "rgb(255,0,0)";
+			//exp_context.fillRect(x, y, width, height);
+			exp_context.fillRect(x, y, height, width/2);
+			//exp_context.fillRect(x, y+625, width, height);
+			exp_context.fillRect(rightx, y, height, (width/2));
+		}
+		
+		function removeDRT(x,y,width,height) {
+			var ctx = document.getElementById('dashit').getContext('2d');
+			var rightx = ctx.canvas.width - x - DRTheight;
+			exp_context.fillStyle = "rgb(0,0,0)";
+			//exp_context.fillRect(x, y, width, height);
+			exp_context.fillRect(x, y, height, width/2);
+			//exp_context.fillRect(x, y+625, width, height);
+			exp_context.fillRect(rightx, y, height, (width/2));
+		}
+			
+		//function used to draw a single dot
+		function drawDot(x, y, dotColour) {
+			if (dotColour == "red") {
+				exp_context.fillStyle = "rgb(255,0,0)";
+			}
+			else if (dotColour == "blue") {
+				exp_context.fillStyle = "rgb(0,0,255)";
+			}
+			else if (dotColour == "white") {
+				exp_context.fillStyle = "rgb(255,255,255)";
+			}
+			exp_context.beginPath();
+			exp_context.arc(x, y, dotPixelSize/2, 0, Math.PI*2, true);
+			exp_context.closePath();
+			exp_context.fill();
+			
+		
+		/*
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.fillRect(x, y, 2, 2);
+		*/
+		}
+		
+		
+		function shuffle(array) {
+			var currentIndex = array.length
+			, temporaryValue
+			, randomIndex
+			;
+
+			// While there remain elements to shuffle...
+			while (0 !== currentIndex) {
+
+				// Pick a remaining element...
+				randomIndex = Math.floor(Math.random() * currentIndex);
+				currentIndex -= 1;
+
+				// And swap it with the current element.
+				temporaryValue = array[currentIndex];
+				array[currentIndex] = array[randomIndex];
+				array[randomIndex] = temporaryValue;
+			}
+
+			return array;
+		}
+		
+		
+		
+		//function used to create the initial X and Y coordinates of all dots for a trial
+		function makeInitialDotValues () {
+			currentDifficultyIndex = nCurrentTrial-1
+			currentDifficulty = difficultyArray[currentDifficultyIndex]
+			//console.log(currentDifficulty)
+			//console.log(currentDifficultyIndex)
+
+			eventCount = 0;
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="18px Verdana";
+			exp_context.textAlign = "center";
+			if(useParticipantHandedness==true){	
+				if (participantHandedness == "left") {
+					exp_context.fillText("To respond to the red signal, press 'Y'",(exp_canvas.width * .5),DRTy-DRTheight);
+				}
+				else if (participantHandedness == "right") {
+					exp_context.fillText("To respond to the red signal, press 'T'",(exp_canvas.width * .5),DRTy-DRTheight);
+				}
+			}else{
+				exp_context.fillText("To respond to the red signal, press 'Q'",(exp_canvas.width * .5),DRTy);
+			}
+			if (DRToccurs) {
+				drawDRT(DRTx,DRTy,DRTwidth,DRTheight);
+			}
+			
+			for (var i = 0; i < nDots; i++) {
+				randomAngle = Math.random()*(Math.PI*2);
+				dotX[i] = exp_canvas.width/2 + (Math.random()*circleRadius*Math.cos(randomAngle));
+				dotY[i] = exp_canvas.height/2 + (Math.random()*circleRadius*Math.sin(randomAngle));
+
+				/*
+			
+				dotX[i] = Math.floor(Math.random()*(boxWidth + 1) + boxLeftLimit);
+				dotY[i] = Math.floor(Math.random()*(boxHeight + 1) + boxTopLimit);
+				*/
+			}
+			
+			randomlyChosenCoherence = Math.floor(Math.random()*(nTrials-(nCurrentTrial-1)));
+			trialCoherence = remainingCoherences[randomlyChosenCoherence];
+			
+			remainingCoherences.splice(randomlyChosenCoherence,1);
+			
+			randomlyChosenDirection = Math.floor(Math.random()*(nTrials-(nCurrentTrial-1)));
+			dotDirection = remainingDirections[randomlyChosenDirection];
+			
+			remainingDirections.splice(randomlyChosenDirection,1);
+			
+			
+			for (var i = 0; i < currentDifficulty; i++) {
+				isBlueDot[i] = true;
+			}
+			for (var i = currentDifficulty; i < nDots; i++) {
+				isBlueDot[i] = false;
+			}
+
+			shuffle(isBlueDot);
+			
+			for (var i = 0; i < nDots; i++) {
+				angleMotion[i] = (Math.random()*360) - 180;
+			}
+			
+			//bInTrial = true;
+			setTimeout(fixation,interTrialInterval);
+			
+			bInDrtBlock = false;
+			DRTrespRecorded = false;
+			DRToccurs = false;
+		}
+		
+		
+		function fixation () {
+			bInDrtBlock = false;
+			DRTrespRecorded = false;
+			DRToccurs = false;
+			//black background
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="18px Verdana";
+			exp_context.textAlign = "center";
+			if(useParticipantHandedness==true){	
+				if (participantHandedness == "left") {
+					exp_context.fillText("To respond to the red signal, press 'Y'",(exp_canvas.width * .5),DRTy-DRTheight);
+				}
+				else if (participantHandedness == "right") {
+					exp_context.fillText("To respond to the red signal, press 'T'",(exp_canvas.width * .5),DRTy-DRTheight);
+				}
+			}else{
+					exp_context.fillText("To respond to the red signal, press 'Q'",(exp_canvas.width * .5),DRTy);
+
+				}
+			//exp_context.font="24px Verdana";
+			//exp_context.fillText("Targets = " + currentDifficulty ,exp_canvas.width/2,exp_canvas.height/2);
+			//exp_context.fillText("Targets = " + currentDifficulty ,exp_canvas.width/2,exp_canvas.height/4);
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.fillRect((boxLeftLimit + boxWidth/2.22222222), (boxTopLimit + boxHeight/2.02020202), boxWidth/10, boxHeight/100);
+			exp_context.fillRect((boxLeftLimit + boxWidth/2.02020202), (boxTopLimit + boxHeight/2.22222222), boxWidth/100, boxHeight/10);
+			
+			
+			if (DRToccurs) {
+				drawDRT(DRTx,DRTy,DRTwidth,DRTheight);
+			}
+			
+			//fixation cross
+			// exp_context.fillStyle = "rgb(255,255,255)";
+			// exp_context.fillRect((boxLeftLimit + boxWidth/2.22222222), (boxTopLimit + boxHeight/2.02020202), boxWidth/10, boxHeight/100);
+			// exp_context.fillRect((boxLeftLimit + boxWidth/2.02020202), (boxTopLimit + boxHeight/2.22222222), boxWidth/100, boxHeight/10);
+			
+			//generate random fixation time from truncated exponential distribution
+			randomUniformNumber = Math.random();
+			fixationTime = Math.log(1-randomUniformNumber)/(-(1/exponentialMean))
+			while(fixationTime > 4800) {
+				randomUniformNumber = Math.random();
+				fixationTime = Math.log(1-randomUniformNumber)/(-(1/exponentialMean))
+			}
+			fixationTime += 400
+	
+			setTimeout(runMoveDots,fixationTime);
+			
+		}
+		
+		
+		//function used to draw the dots, then change X and Y coordinates; repeating this function 'makes the dots move'
+		function drawMultiDots () {
+	
+			//bInTrial = true;
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="18px Verdana";
+			exp_context.textAlign = "center";
+			if(useParticipantHandedness==true){	
+				if (participantHandedness == "left") {
+					exp_context.fillText("To respond to the red signal, press 'Y'",(exp_canvas.width * .5),DRTy-DRTheight);
+				}
+				else if (participantHandedness == "right") {
+					exp_context.fillText("To respond to the red signal, press 'T'",(exp_canvas.width * .5),DRTy-DRTheight);
+				}
+			}else{
+				exp_context.fillText("To respond to the red signal, press 'Q'",(exp_canvas.width * .5),DRTy);
+			}
+			if (DRToccurs) {
+				drawDRT(DRTx,DRTy,DRTwidth,DRTheight);
+			}
+			
+		
+			
+			if (eventCount < allGoRedEventNumber) {
+				
+				for (var i = 0; i < nDots; i++) {
+					if (isBlueDot[i] == true) {
+						dotCurrentColour[i] = "blue";
+					}
+					else if (isBlueDot[i] == false) {
+						dotCurrentColour[i] = "red";
+					}
+				}
+				
+			}
+			else {
+				for (var i = 0; i < nDots; i++) {
+					dotCurrentColour[i] = "red";
+				}
+			}
+			
+			
+			for (var i = 0; i < trialCoherence; i++) {
+				dotIsCoherent[i] = true;
+			}
+			for (var i = trialCoherence; i < nDots; i++) {
+				dotIsCoherent[i] = false;
+			}
+
+			shuffle(dotIsCoherent);
+			
+			
+			for (var i = 0; i < nDots; i++) {
+				
+				drawDot (dotX[i], dotY[i], dotCurrentColour[i]);
+				
+				changeInAngle = (Math.random()*changeInAngleBound*2) - changeInAngleBound;
+				
+				angleMotion[i] += changeInAngle;
+				
+				if (angleMotion[i] > 180) {
+					angleMotion[i] -= 360;
+				}
+				else if (angleMotion[i] < -180) {
+					angleMotion[i] += 360;
+				}
+				
+				//angleMotion[i] = 45;
+				
+				dotX[i] += Math.cos(angleMotion[i]*(Math.PI/180))*unitMove;
+				dotY[i] += Math.sin(angleMotion[i]*(Math.PI/180))*unitMove;
+				
+				
+				
+				newXPosition = (exp_canvas.width/2) - dotX[i];
+				newYPosition = (exp_canvas.height/2) - dotY[i];
+				hyp = Math.sqrt(newXPosition*newXPosition + newYPosition*newYPosition);
+				
+			
+				
+				
+				if (circleRadius < hyp) {
+					
+					
+				
+					newXPosition = (exp_canvas.width/2) + dotX[i];
+					newYPosition = (exp_canvas.height/2) + dotY[i];
+					
+					dotX[i] -= Math.cos(angleMotion[i]*(Math.PI/180))*unitMove;
+					dotY[i] -= Math.sin(angleMotion[i]*(Math.PI/180))*unitMove;
+					
+					if (changeInAngle >= 0) {
+						changeInAngle -= 180;
+					}
+					else if (changeInAngle < 0) {
+						changeInAngle += 180;
+					}
+					
+					angleMotion[i] += changeInAngle;
+				
+					if (angleMotion[i] > 180) {
+						angleMotion[i] -= 360;
+					}
+					else if (angleMotion[i] < -180) {
+						angleMotion[i] += 360;
+					}
+					
+					dotX[i] += Math.cos(angleMotion[i]*(Math.PI/180))*unitMove;
+					dotY[i] += Math.sin(angleMotion[i]*(Math.PI/180))*unitMove;
+				
+					
+					
+				}
+				
+				
+				
+			}
+			eventCount++;
+			
+			
+			
+			currentMotionDate = new Date();
+			currentMotionTime = currentMotionDate.getTime();
+			
+			totalMotionTime = currentMotionTime - startMotionTime;
+			
+			if (totalMotionTime > endMotionTime) {
+				clearInterval(nIntervId);
+				trialEndFromStart = currentMotionTime - experimentStartTime;
+				trialEndFromBlockStart = currentMotionTime - blockStartTime;
+				
+				stopDotMotion();
+			}
+		}
+		
+		
+		//repeats the drawing function based on time intervals
+		function runMoveDots () {
+			bInDrtBlock = true;
+			DRTrespRecorded = true;
+			drtInterId = setInterval(DRT, DRTrepeatTime);
+			//start timer
+			startMotionDate = new Date();
+			startMotionTime = startMotionDate.getTime();
+			
+			//bInTrial = true;
+			
+			bInMovingDots = true;
+			
+			drawMultiDots();
+			nIntervId = setInterval(drawMultiDots, frameRate);
+			
+		}
+		
+		
+		
+		function stopDotMotion () {
+			removeDRT(DRTx,DRTy,DRTwidth,DRTheight);
+
+			bInMovingDots = false;
+			
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="18px Verdana";
+			exp_context.textAlign = "center";
+			exp_context.fillText("Prepare for dot judgement. Place fingers on keys.",exp_canvas.width/2,(boxBottomLimit + boxHeight/4+50));
+			
+			if (useParticipantHandedness == true) {
+				if (participantHandedness == "left") {
+					exp_context.fillText("Yes = Q",(boxLeftLimit - boxWidth/4+5),(boxBottomLimit + boxHeight/4+150));
+					exp_context.fillText("No = W",(boxRightLimit + boxWidth/4+5),(boxBottomLimit + boxHeight/4+150));
+				}
+				else if (participantHandedness == "right") {
+					exp_context.fillText("Yes = O",(boxLeftLimit - boxWidth/4+5),(boxBottomLimit + boxHeight/4+150));
+					exp_context.fillText("No = P",(boxRightLimit + boxWidth/4+5),(boxBottomLimit + boxHeight/4+150));
+				}
+			}
+			else {
+				exp_context.fillText("Yes = O",(boxLeftLimit - boxWidth/4+5),(boxBottomLimit + boxHeight/4+100));
+				exp_context.fillText("No = P",(boxRightLimit + boxWidth/4+5),(boxBottomLimit + boxHeight/4+100));
+			}
+
+			
+			bInDrtBlock = false;
+			DRToccurs = false;
+			clearInterval(drtInterId);
+			removeDRT(DRTx,DRTy,DRTwidth,DRTheight);
+			setTimeout(startDotJudgment, 3000);
+		}
+
+		
+		
+		function startDotJudgment () {
+			
+			bInMovingDots = false;
+			
+			nPresentedStimCounter = 0;
+			correctCounter = 0;
+			
+			
+			remainingDots = [];
+			
+			//console.log(remainingDots);
+			
+			for (var i = 0; i < nDots; i++) {
+				remainingDots[i] = i;
+			}
+			
+			
+			makeDotJudgment();
+			
+			bInDrtBlock = false;
+			DRToccurs = false;
+			clearInterval(drtInterId);
+			removeDRT(DRTx,DRTy,DRTwidth,DRTheight);
+		}
+		
+		
+		
+		
+		function makeDotJudgment () {
+			removeDRT(DRTx,DRTy,DRTwidth,DRTheight);
+			randomlyChosenDotIndex = Math.floor(Math.random()*(remainingDots.length));
+			//console.log(remainingDots.length)
+			randomlyChosenDot = remainingDots[randomlyChosenDotIndex];
+			
+			//console.log(randomlyChosenDot);
+			
+			remainingDots.splice(randomlyChosenDotIndex,1);
+			
+			for (var i = 0; i < nDots; i++) {
+				dotCurrentColour[i] = "red";
+			}
+			
+			dotCurrentColour[randomlyChosenDot] = "white";
+			
+			
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="18px Verdana";
+			exp_context.textAlign = "center";
+			if (useParticipantHandedness == true) {
+				if (participantHandedness == "left") {
+					exp_context.fillText("To respond to the red signal, press 'Y'",(exp_canvas.width * .5),DRTy-DRTheight);
+				}
+				else if (participantHandedness == "right") {
+					exp_context.fillText("To respond to the red signal, press 'T'",(exp_canvas.width * .5),DRTy-DRTheight);
+				}
+			}else{
+				//exp_context.fillText("To respond to the red signal, press 'Q'",(exp_canvas.width * .5),DRTy);
+			}
+			
+			if (DRToccurs) {
+				drawDRT(DRTx,DRTy,DRTwidth,DRTheight);
+			}
+			
+			for (var i = 0; i < nDots; i++) {
+				drawDot (dotX[i], dotY[i], dotCurrentColour[i]);
+			}
+			
+			
+			
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="18px Verdana";
+			exp_context.textAlign = "center";
+			exp_context.fillText("Was the dot currently in white one of the blue dots from the start of the trial?",exp_canvas.width/2,(boxBottomLimit + boxHeight/4+50));
+			
+			if (useParticipantHandedness == true) {
+				if (participantHandedness == "left") {
+					exp_context.fillText("Yes = Q",(boxLeftLimit - boxWidth/4+5),(boxBottomLimit + boxHeight/4+150));
+					exp_context.fillText("No = W",(boxRightLimit + boxWidth/4+5),(boxBottomLimit + boxHeight/4+150));
+				}
+				else if (participantHandedness == "right") {
+					exp_context.fillText("Yes = O",(boxLeftLimit - boxWidth/4+5),(boxBottomLimit + boxHeight/4+150));
+					exp_context.fillText("No = P",(boxRightLimit + boxWidth/4+5),(boxBottomLimit + boxHeight/4+150));
+				}
+			}
+			else {
+				exp_context.fillText("Yes = O",(boxLeftLimit - boxWidth/4+5),(boxBottomLimit + boxHeight/4+100));
+				exp_context.fillText("No = P",(boxRightLimit + boxWidth/4+5),(boxBottomLimit + boxHeight/4+100));
+			}
+			
+			
+			
+			nPresentedStimCounter++;
+			
+			startDate = new Date();
+			bInTrial = true;
+		}
+		
+		
+		
+		
+		
+		function storeResults () {
+			
+			if (chosenResponse === "yes") {
+				if (isBlueDot[randomlyChosenDot] === true) {
+					correct = 1;
+				}
+				else if (isBlueDot[randomlyChosenDot] === false) {
+					correct = 0;
+				}
+			}
+			else if (chosenResponse === "no") {
+				if (isBlueDot[randomlyChosenDot] === true) {
+					correct = 0;
+				}
+				else if (isBlueDot[randomlyChosenDot] === false) {
+					correct = 1;
+				}
+			}
+			
+			correctCounter += correct;
+			
+			
+			if (nCurrentBlock > 0) {
+				averageFrameRate = Math.round((eventCount / (totalMotionTime/1000)) * 1000)/1000;
+				dataOutput.push(username + "\t" + username + "\t" + nCurrentBlock + "\t" + nCurrentTrial + "\t" + fixationTime + "\t" + currentDifficulty + "\t" + nDots + "\t" + allGoRedEventNumber + "\t" + unitMove + "\t" + chosenResponse + "\t" + correct + "\t" + eventCount + "\t" + averageFrameRate + "\t" + totalMotionTime + "\t" + trialEndFromStart + "\t" + trialEndFromBlockStart + "\t" + responseFromStart + "\t" + responseFromBlockStart + "\t" + rt);
+				//console.log(dataOutput);
+			}
+			
+			
+			if (nPresentedStimCounter >= nDotsToAnswer) {
+				trialFeedback();	
+			}
+			else {
+				makeDotJudgment();
+			}
+		}
+		
+		
+		
+		
+		function trialFeedback () {
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="18px Verdana";
+			exp_context.textAlign = "center";
+			if (useParticipantHandedness == true) {
+				if (participantHandedness == "left") {
+					exp_context.fillText("To respond to the red signal, press 'Y'",(exp_canvas.width * .5),DRTy-DRTheight);
+				}
+				else if (participantHandedness == "right") {
+					exp_context.fillText("To respond to the red signal, press 'T'",(exp_canvas.width * .5),DRTy-DRTheight);
+				}
+			}else{
+				exp_context.fillText("To respond to the red signal, press 'Q'",(exp_canvas.width * .5),DRTy);
+			}
+			if (DRToccurs) {
+				drawDRT(DRTx,DRTy,DRTwidth,DRTheight);
+			}
+			
+			
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.fillText("Well done! For this trial, you correctly identified " + correctCounter + " dots of the " + nDotsToAnswer + " total dots",exp_canvas.width/2,exp_canvas.height/4+50);
+			
+			//exp_context.fillText("move coherently toward either the top left, or the top right of the screen. The remaining dots will move",exp_canvas.width/2,exp_canvas.height/4+75);
+			//exp_context.fillText("in a random direction.",exp_canvas.width/2,exp_canvas.height/4+100);
+			
+			exp_context.fillText("Press the SPACEBAR key to continue to the next trial.",exp_canvas.width/2,exp_canvas.height/4+175);
+			
+			bInTrialFeedback = true;
+		}
+		
+		
+		
+		
+		
+
+		//error function (maybe add "potentialErrorNumber" as a parameter later
+		function error () {
+			exp_context.fillStyle = "rgb(255,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+		}
+		
+		/*
+		
+		function feedback () {
+			//bInTrial = false;
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.fillRect((boxLeftLimit - boxWidth/4), (boxTopLimit - boxHeight/4), boxWidth/8, boxHeight/8);
+			exp_context.fillRect((boxRightLimit + boxWidth/8), (boxTopLimit - boxHeight/4), boxWidth/8, boxHeight/8);
+		
+			if (chosenResponse === "left") {
+				if (dotDirection === "left") {  
+					exp_context.fillStyle = "rgb(0,255,0)";
+					exp_context.fillRect((boxLeftLimit - boxWidth/4), (boxTopLimit - boxHeight/4), boxWidth/8, boxHeight/8);
+				}
+				else if (dotDirection === "right") {
+					exp_context.fillStyle = "rgb(255,0,0)";
+					exp_context.fillRect((boxLeftLimit - boxWidth/4), (boxTopLimit - boxHeight/4), boxWidth/8, boxHeight/8);
+				}
+				else {
+					exp_context.fillStyle = "rgb(0,0,255)";
+					exp_context.fillRect((boxLeftLimit - boxWidth/4), (boxTopLimit - boxHeight/4), boxWidth/8, boxHeight/8);
+				}
+			}
+			else if (chosenResponse === "right") {
+				if (dotDirection === "left") {
+					exp_context.fillStyle = "rgb(255,0,0)";
+					exp_context.fillRect((boxRightLimit + boxWidth/8), (boxTopLimit - boxHeight/4), boxWidth/8, boxHeight/8);
+				}
+				else if (dotDirection === "right") {
+					exp_context.fillStyle = "rgb(0,255,0)";
+					exp_context.fillRect((boxRightLimit + boxWidth/8), (boxTopLimit - boxHeight/4), boxWidth/8, boxHeight/8);
+				}
+				else {
+					exp_context.fillStyle = "rgb(0,0,255)";
+					exp_context.fillRect((boxRightLimit + boxWidth/8), (boxTopLimit - boxHeight/4), boxWidth/8, boxHeight/8);
+				}
+			}
+			
+			// Code to run at end of trial to set up the next trial
+			
+			if (chosenResponse == dotDirection) {
+				correct = 1;
+				//write correct in-between the response boxes
+				exp_context.fillStyle = "rgb(0,255,0)";
+				exp_context.font="18px Verdana";
+				exp_context.textAlign = "center";
+				exp_context.fillText("Correct",exp_canvas.width/2,(boxTopLimit - boxHeight/4+5));
+				setTimeout(endOfTrial,feedbackDisplayTime);
+			}
+			else if (chosenResponse != dotDirection) {
+				correct = 0;
+				//write incorrect in-between the response boxes
+				exp_context.fillStyle = "rgb(255,0,0)";
+				exp_context.font="18px Verdana";
+				exp_context.textAlign = "center";
+				exp_context.fillText("Incorrect",exp_canvas.width/2,(boxTopLimit - boxHeight/4+5));
+				setTimeout(endOfTrial,(feedbackDisplayTime+errorTimeDelay));
+			}
+			
+			
+			//write function here, time it out
+			//nCurrentTrial ++;
+			
+			//console.log ("Trial: " + nCurrentTrial + " completed"); //alert(t);
+			
+			
+		}
+		
+		*/
+		
+		
+		function endOfTrial () {
+			
+			/*
+			averageFrameRate = Math.round((eventCount / (rt/1000)) * 1000)/1000;
+			dataOutput.push(username + "t" + nCurrentBlock + "\t" + nCurrentTrial + "\t" + fixationTime + "\t" + trialCoherence + "\t" + nDots + "\t" + Math.round((trialCoherence/nDots) *1000)/10 + "\t" + dotDirection + "\t" + chosenResponse + "\t" + correct + "\t" + eventCount + "\t" + averageFrameRate + "\t" + rt);
+			console.log(dataOutput);
+			*/
+			//dataOutput.push(username + "t" + nCurrentBlock + "\t" + nCurrentTrial + "\t" + fixationTime + "\t" + trialCoherence + "\t" + currentCoherence + "\t" + nDots + "\t" + Math.round((trialCoherence/nDots) *1000)/10 + "\t" + dotDirection + "\t" + chosenResponse + "\t" + correct + "\t" + eventCount + "\t" + averageFrameRate + "\t" + rt);
+		
+			if (nCurrentBlock == 0) {
+				if (nCurrentTrial < nPracTrials) {
+					nCurrentTrial ++;
+					makeInitialDotValues ();
+				}
+				else {
+					endOfBlock();
+				}
+			}
+			else {
+				//console.log ("Trial: " + nCurrentTrial + " completed");
+				if (nCurrentTrial < nTrials) {
+					nCurrentTrial ++;
+					makeInitialDotValues ();
+				}
+				else if (nCurrentBlock < nBlocks) {
+					//console.log(DRTdataOutput);
+					endOfBlock();
+				}
+				else {
+					endScreen();
+					//end of experiment
+				}
+			}
+		}
+
+function endScreen () {
+			exp_context.fillStyle = "rgb(0,0,0)";
+			exp_context.fillRect(0, 0, exp_canvas.width, exp_canvas.height);
+			exp_context.fillStyle = "rgb(255,255,255)";
+			exp_context.font="18px Verdana";
+			exp_context.textAlign = "center";
+			exp_context.fillText("The experiment is now finished.",exp_canvas.width/2,exp_canvas.height/4);
+			exp_context.fillText("Please wait while we redirect you to Prolific.",exp_canvas.width/2,exp_canvas.height/3);
+			
+			setTimeout(endOfExperiment,2000);
+		
+}		
+		
+function endOfExperiment() {
+			
+			
+			bInDrtBlock = false;
+			DRToccurs = false;
+			clearInterval(drtInterId);
+			removeDRT(DRTx,DRTy,DRTwidth,DRTheight);
+				
+			//leave the starting bits until later (when everything else is working)
+			//output_txt = "username: " + username + ", Experiment time (minutes): " + Math.ceil((getTimer() - expStartTime) / 1000 / 60) + "\nDelayed Feedback: " + delayedFeedback + ", Delayed Feedback Time: " + delayedFeedbackTime + "\n\nOperating system: " + Capabilities.os +"\nManufacturer: " + Capabilities.manufacturer + "\nPlayer type: " +Capabilities.playerType + "\nVersion: " + Capabilities.version + "\n\n";
+			
+			output_txt = "\componentID" + "\t" + "subID" + "\t" + "blkNum" + "\t" + "trlNum" + "\t" + "randomStimulusOnsetTime" + "\t" + "dotsToTrack" + "\t" + "numberofDots" + "\t" + "goRedEventNumber" + "\t" + "speedOfMovement" +"\t" + "response" +"\t" + "correct" + "\t" + "eventCount" + "\t" + "averageFrameRate" + "\t" + "totalMotionTime" + "\t" + "trialEndFromStart" + "\t" + "trialEndFromBlockStart" + "\t" + "responseFromStart" + "\t" + "responseFromBlockStart" + "\t" + "RT\n";
+			
+			//output_txt += "\nblkNum" + "\t" + "trlNum" + "\t" + "randomStimulusOnsetTime" + "\t" + "coherentDots" + "\t" + "finishingCoherence" + "\t" + "numberofDots" + "\t" + "percentCoherence" + "\t" + "winningDirection" +"\t" + "response" +"\t" + "correct" + "\t" + "eventCount" + "\t" + "averageFrameRate" +"\t" + "RT\n";
+			
+			
+			for (var i = 0; i < dataOutput.length; i++) {
+				output_txt += dataOutput[i].toString() + "\n";
+			}
+						
+			var expVarTxt = output_txt;
+			//var expVarFn = participantHandedness;
+			var expSendVariables = "txt=" + expVarTxt ;
+			
+			//jatos.studySessionData["username"] = username;
+			//jatos.studySessionData["expSendVariables"] = expSendVariables;
+			
+			//experimentDataRequest.send(expSendVariables);
+			//console.log(expSendVariables);
+			
+			
+			
+			DRToutput_txt = "\componentID" + "\t" + "subID" + "\t" + "blkNum" + "\t" + "trlNum" + "\t" + "dotsToTrack" + "\t" + "numberofDots" + "\t" + "DRTrt" + "\t" + "result" + "\t" + "DRTstartDate" + "\t" + "DRTstartTime" + "\t" + "DRTendDate" + "\t" + "DRTendTime" + "\t" + "startedInMovingTime" + "\t" + "endedInMovingTime" + "\t" + "inDecisions\n";
+			
+			
+			for (var i = 0; i < DRTdataOutput.length; i++) {
+				DRToutput_txt += DRTdataOutput[i].toString() + "\n";
+			}
+			
+			
+			var DRTexpVarTxt = DRToutput_txt;
+			//var DRTexpVarFn = participantHandedness + "_DRT";
+			var DRTexpSendVariables = "txt=" + DRTexpVarTxt;
+			
+			
+			//DRTexperimentDataRequest.send(DRTexpSendVariables);
+			//console.log(DRTexpSendVariables);
+			
+				
+			//var resultData = expSendVariables + "\n" + DRTexpSendVariables;
+
+			//console.log(result.data);
+			//jatos.submitResultData(DRTexpSendVariables, jatos.startNextComponent);
+			
+			}
+
+		
+
+	//RUNNING NECESSARY FUNCTIONS
+	//jatos.onLoad(function() {
+			//if (jatos.urlQueryParameters.hasOwnProperty(“PROLIFIC_PID”)) {
+				//username = jatos.urlQueryParameters.PROLIFIC_PID; 
+				initialise();
+				//}
+				//});
+	
+	</SCRIPT>
+  </BODY>
+</HTML>

@@ -1,0 +1,473 @@
+<!doctype html>
+<!-- Example taken from http://www.jspsych.org/tutorials/rt-task/ and adapted for the use with JATOS -->
+<html>
+
+<head>
+    <title> SART </title>
+    <!-- If you use an older version of JATOS (< 3.3.1) you have to use absolutes path for you assets and jatos.js-->
+    <script src="jspsych-6.3.0/jspsych.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-image-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-button-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-call-function.js"></script>        
+    <script src="jspsych-6.3.0/plugins/jspsych-fullscreen.js"></script>
+ 	 <script src="jspsych-6.3.0/plugins/jspsych-animation.js"></script>
+    <script src="jatos.js"></script>
+    <link href="jspsych-6.3.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+</head>
+
+<body>
+</body>
+<script>
+    /* create timeline */
+    var timeline = [];
+    var stim_duration = 250;
+    var fix_duration = 250;
+    var response_button = 'f';
+	var online = true;
+	var username; 
+	var currentTask;
+    if (online == true){
+			// username = jatos.urlQueryParameters.PROLIFIC_PID
+			// console.log(username)
+		}else{
+			var username;
+		}
+
+	timeline.push({
+ 		 type: 'fullscreen',
+ 		 fullscreen_mode: true
+		});
+
+		var consent = {
+			type: "html-button-response",
+			choices: ['I consent'],
+			post_trial_gap: 1000,
+			stimulus: 			"<div style='float: centre;'><img src='setup/logo.png'/>" +
+			"<p>Information Statement and Consent Page for the Research Project: Understanding basic cognition by categorising simple perceptual stimuli (Online Marketplaces) </p><p> Document Version 1; dated 17/07/2019</p>"+
+			"<p>You are invited to participate in the research project identified above which is being conducted by Professor Scott Brown, Associate Professor Ami Eidels, Dr Guy Hawkins, and Dr Emily Freeman from the School of Psychology at the University of Newcastle. The results of this research may be used in Honours or PhD theses of students supervised by the above researchers.</p>"+
+			"<p><b>Why is the research being done?</b></p>"+
+			"<p>The purpose of the research is to study the cognitive processes people use to make simple and complex decisions.</p>"+
+			"<p><b>Who can participate in the research?</b></p>"+
+			"<p>Anyone who is over the age of 18 is eligible to participate in this study.</p>"+
+			"<p><b>What choice do you have?</b></p>"+
+			"<p>Participation in this research is entirely your choice. Only those people who give their informed consent will be included in the project. Whether or not you decide to participate, your decision will not disadvantage you. If you do decide to participate, you may withdraw from the project at any time without giving a reason and have the option of withdrawing any data which identifies you, up until the completion of the sessions.</p>"+
+			"<p><b>What would you be asked to do?</b></p>"+
+			"<p>If you agree to participate, participation will be online at a time and place of your discretion. During the session you will be presented with simple stimuli on screen, like letters, colours, simple geometric shapes or hypothetical products, and you will be asked questions about these stimuli. You might also be asked to complete a survey of demographic information, or questions relating to the experimental task. You will not be asked to provide identifying or sensitive information.</p>"+
+			"<p>The researcher will provide all the details about the experimental task you will undertake prior to the commencement of the experiment.</p>"+
+			"<p><b>How much time will it take?</b></p>"+
+			"<p>You will be asked to complete one session of up to one hour. For your participation, you will be reimbursed as per the study advertisement.</p>"+
+			"<p><b>What are the risks and benefits of participating?</b></p>"+
+			"<p>By participating in this experiment, we believe you may gain a greater understanding of what is involved in psychological research. We foresee no risk to you in participating in this study.</p>"+
+			"<p><b>How will your privacy be protected?</b></p>"+
+			"<p>Participating in the study is voluntary. You may withdraw your consent at any time, for any reason, before or during the study simply clicking the 'close' or 'back' buttons on your browser. No data will be recorded should you choose to withdraw, and no reason for withdrawal will be asked. During the experiment, cookies will never be stored on your computer, and your camera and microphone will never be accessed.</p>"+
+			"<p>Should you choose to participate, all responses will be confidential and it will not be possible to identify you from your answers. Your de-identified responses will be stored on a secure server, which will only be accessible to members of the research team. The research data will be stored on password protected computers and servers for a period of at least five years. De-identified data may also be shared with other international researchers and made available to the research community via open data repositories.</p>"+
+			"<p><b>How will the information collected be used?</b></p>"+
+			"<p>The results of this research may be reported at professional conferences and in published articles in professional and scientific journals, student research reports and presentations, and online blogs and websites. Any results arising from this research will be reported as a summary of all responses: individual participants will not be identified in any reports from the project. The results of this study and related studies will be available by 2021 - you can obtain a copy by emailing the research team. </p>"+
+			"<p><b>What do you need to do to participate?</b></p>"+
+			"<p>Thank you for the time you have taken to consider this invitation. Please read this Information Statement and be sure you understand its contents before you consent to participate. Please save a copy of this information page. If there is anything you do not understand, or you have questions, please contact Professor Scott Brown, School of Psychology, Faculty of Science, The University of Newcastle, using the phone number or email address above. </p>"+
+			"<p> If you would like to participate, you may consent to participating in this research by reading the consent statement that follows, then clicking the 'I consent' button at the bottom of the page. You can choose not to consent by clicking either the 'back' or 'close window' buttons on your browser.</p>"+
+			"<p><b>Statement of Consent:</b></p>"+
+			"<p>I agree to participate in the above research project and give my consent freely. I understand that the project will be conducted as described in the Information Statement, a copy of which I have retained. I understand I can withdraw from the project at any time and do not have to give any reason for withdrawing. I consent to:</p>"+
+			"<p> - 	 One online session of up to one hour duration, during which I will answer questions about simple stimuli displayed on a computer monitor, such as letters, colours, simple geometric shapes or hypothetical products. I may also be asked to complete a survey of demographic information, or questions relating to the experimental task. I understand that I will not be asked to provide identifying or sensitive information. I understand that my personal information will remain confidential to the researchers. I have had the opportunity to have questions answered to my satisfaction. </p>"+
+			"<p><b>Complaints about this research</b></p>"+
+			"<p>This project has been approved by the University’s Human Research Ethics Committee, Approval No. H-2019-0321.</p>"+
+			"<p>Should you have concerns about your rights as a participant in this research, or you have a complaint about the manner in which the research is conducted, it may be given to the researcher, or, if an independent person is preferred, to the Human Research Ethics Officer, Research Services, NIER Precinct, The University of Newcastle, University Drive, Callaghan NSW 2308, Australia, telephone (02) 4921 6333, email Human-Ethics@newcastle.edu.au. </p>"+
+			"<div style='float: centre;'><img src='setup/info.png'/>",
+			margin_vertical: "50px"
+			
+		};
+		timeline.push(consent);
+    /* define welcome message trial */
+    if (online){
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin.",
+			data: { subject: username }
+		};
+		}else{
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin."
+		};
+		}
+    timeline.push(welcome);
+
+	var buttonGo = {
+			type: "image-keyboard-response",
+			post_trial_gap: 1000,
+			stimulus: 'setup/keyboard-go.png',
+			prompt: "<br>"+
+					"<br>"+"Please press this button.",
+			on_finish: function(data){
+				response_button = data.response
+			}
+		};
+		
+		
+		
+		var correctButtons = {
+			type: "html-button-response",
+			choices: ['Yes', 'No'],
+			post_trial_gap: 1000,
+			stimulus: function(){
+			return "<p> The response button is <strong>" + response_button.toUpperCase() + "</strong></p>" +
+			"<p> Is this correct? </p>"
+			},
+			on_finish: function(data){
+				goodButtons =  data.response
+			}
+		};		
+		
+		
+		var buttons = {
+			timeline: [ buttonGo, correctButtons],
+			loop_function: function(){
+				key_response = goodButtons;
+     	 		if(key_response == 1){
+       			 return true;
+      			} else {
+        		return false;
+      			}
+    		}
+		}
+		
+		
+  		timeline.push(buttons);
+
+
+    /* define instructions trial */
+    var instructions = {
+        type: "html-keyboard-response",
+        choices: jsPsych.NO_KEYS,
+        stimulus: function(){ 
+        	return "<p>In this experiment, you will be presented with a series of numbers " + 
+            "in the centre of the screen. These numbers will range from 1 to 9.</p>" +
+            "<p>You must press <strong>" + response_button.toUpperCase() + 
+            "</strong> in response to each digit, except when the digit is the number <b>3</b>.</p>" +
+            "<p>If the digit is the number <strong>3, do NOT </strong> press anything. " +
+            "Simply wait for the next number.</p>" +
+			"<p> You can commence the experiment shortly. </p>"},
+        post_trial_gap: 0,
+        trial_duration: 10000,
+        data: {
+                test_part: 'instr',
+            }
+    };
+    timeline.push(instructions);
+
+    var instructions2 = {
+        type: "html-keyboard-response",
+        choices: [" "],
+        stimulus: function(){ 
+        	return "<p>In this experiment, you will be presented with a series of numbers " + 
+            "in the centre of the screen. These numbers will range from 1 to 9.</p>" +
+            "<p>You must press <strong>" + response_button.toUpperCase() + 
+            "</strong> in response to each digit, except when the digit is the number <b>3</b>.</p>" +
+            "<p>If the digit is the number <strong>3, do NOT </strong> press anything. " +
+            "Simply wait for the next number.</p>" +
+            "<p><b>Press space bar to continue.</b></p>" },
+        post_trial_gap: 0,
+        data: {
+                test_part: 'instr',
+            }
+    };
+    timeline.push(instructions2);
+
+
+    var instructions3 = {
+        type: "html-keyboard-response",
+        choices: [" "],
+        stimulus: function(){ 
+            return "<p>Here is an example:</p>" +
+            "<p>If you see the digit <b>1</b>, you would press " + response_button.toUpperCase() + ".</p>" +
+            "<p>If you see the digit <b>4</b>, you would again press " + response_button.toUpperCase() + ".</p>" +
+            "<p>If you see the digit <b>3</b>, <b>DO NOT</b> press "+ response_button.toUpperCase() + ".</p>"+
+            "<p>Let's now try this in the practice block.</p>" +
+            "<p>Please answer as quickly and accurately as possible. </p>" +
+            "<p><b>Press space bar to begin a practice block.</b></p>"},
+		post_trial_gap: 2000,
+        data: {
+                test_part: 'instr',
+            }
+    };
+    timeline.push(instructions3);
+
+
+	/* practice trials */
+	
+	var prac_stimuli = [{
+            stimulus: "prac/1.png",
+            data: {
+                test_part: 'prac',
+            }
+        },
+        {
+            stimulus: "prac/2.png",
+            data: {
+                test_part: 'prac',
+            }
+        },
+        {
+            stimulus: "prac/3.png",
+            data: {
+                test_part: 'no-go_prac',
+            }
+        },
+        {
+            stimulus: "prac/4.png",
+            data: {
+                test_part: 'prac',
+            }
+        },
+        {
+            stimulus: "prac/5.png",
+            data: {
+                test_part: 'prac',
+            }
+        }
+    ];
+
+    var fixationP = {
+			type: 'html-keyboard-response',
+			stimulus: '<div style="font-size:120px;">+</div>',
+			choices:  function(){return [response_button]},
+            trial_duration: fix_duration,       
+            response_ends_trial: false,
+			data: { test_part: 'fixation' }
+		};
+   
+   var prac = {
+        type: "image-keyboard-response",
+        stimulus: jsPsych.timelineVariable('stimulus'),
+        choices: function(){return[response_button]},
+        trial_duration: stim_duration,
+        response_ends_trial: false,
+        data: jsPsych.timelineVariable('data'),
+    }
+   
+    var mask = {
+        type: 'html-keyboard-response',
+        stimulus: " ",
+        choices: function(){
+				if (jsPsych.data.get().last(1).values()[0].rt == null){
+					return [response_button]
+				}else {
+					return jsPsych.NO_KEYS
+					} 
+				},
+        trial_duration: 900,
+        response_ends_trial: false,
+        on_finish: function(data){
+        	data.test_part = "mask"
+            if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(3).values()[0].test_part == "fixation"){
+                data.trial_rt = jsPsych.data.get().last(3).values()[0].rt-fix_duration
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(1).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "prac"){
+                data.trial_rt =  data.rt 
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(1).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "no-go_prac"){
+                data.trial_rt =  data.rt 
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "prac"){
+                data.trial_rt =  data.rt + stim_duration
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(2).values()[0].test_part == "no-go_prac"){
+                data.trial_rt = data.rt + stim_duration
+            }
+            // else {
+            // 	data.trial_rt = jsPsych.data.get().last(2).values()[0].rt
+            // }
+            if (jsPsych.data.get().last(3).values()[0].test_part == "fixation" & jsPsych.data.get().last(3).values()[0].rt > 0 ){
+                data.correct = 2
+            } else if (jsPsych.data.get().last(2).values()[0].test_part == "no-go_prac" & data.trial_rt == null){
+        		data.correct = 1
+        		data.trial = 'no-go_prac'
+        		} else if (jsPsych.data.get().last(2).values()[0].test_part == "no-go_prac" & data.trial_rt > 0){
+        		data.correct = 0
+	       		data.trial = 'no-go_prac'
+    		} else if (jsPsych.data.get().last(2).values()[0].test_part == "prac" & data.trial_rt > 0){
+    			data.correct = 1
+    			data.trial = 'prac'
+    		} else if (jsPsych.data.get().last(2).values()[0].test_part == "prac" & data.trial_rt == null){
+    			data.correct = 0
+    			data.trial = 'prac'
+            }
+            if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(2).values()[0].rt > 0){
+                data.second_rt = jsPsych.data.get().last(2).values()[0].rt
+            } else if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(1).values()[0].rt > 0){
+                data.second_rt = data.rt + stim_duration
+            }
+    	}
+    }
+	
+	var feedback = {
+		type: "html-keyboard-response",
+		data: {test_part: "feedback"},
+		choices: [' '],
+		stimulus: function(){
+			var last_trial = jsPsych.data.get().last(1).values()[0].correct;
+			if (last_trial == 1){
+				return "<b> Correct! </b>" +
+						"<p> Press space bar to continue</p>" 
+				
+			} else{
+				return "<b> Incorrect!</b>" +
+                "<p>Remember to press " + response_button.toUpperCase() + " for all digits <b>except</b> 3.</p>" +
+                        "</p><p> <b>Do not</b> press the button if the digit is a 3. </p>" +
+						"</p><p> Press space bar to continue. </p>" 
+				}
+			}
+		};
+	
+    var prac_procedure = {
+        timeline: [fixationP,prac,mask,feedback],
+        timeline_variables: prac_stimuli,
+        repetitions: 1,
+        randomize_order: true
+    }
+    timeline.push(prac_procedure);
+    
+
+	var start_experiment = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: " <p>You are now ready to start the experiment!" +
+						"</p><p> Press space bar to begin</p>"
+		}
+		timeline.push(start_experiment);
+
+
+
+    var test_stimuli = [{ stimulus: 'img/1_14_mono.png', data: {test_part: 'test' } },{ stimulus: 'img/1_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/3_14_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_14_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_14_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_14_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/4_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/4_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/4_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/4_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/4_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/3_14_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_14_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_14_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_14_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/4_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/4_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/4_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/4_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/4_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/3_14_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_14_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_14_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_14_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_Tahoma.png', data: {test_part: 'no-go'} },{ stimulus: 'img/4_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/4_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/4_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/4_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/4_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/4_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/5_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/5_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/5_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/5_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/6_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/6_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/6_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/6_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/7_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/7_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/7_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/7_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/8_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/8_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/8_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/8_18_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_14_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_15_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_16_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_17_Tahoma.png', data: {test_part: 'test'} },{ stimulus: 'img/9_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/9_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/9_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/9_18_Tahoma.png', data: {test_part: 'test'} }];
+    
+    var fixation = {
+			type: 'html-keyboard-response',
+			stimulus: '<div style="font-size:120px;">+</div>',
+			choices:  function(){return [response_button]},
+            trial_duration: fix_duration,       
+            response_ends_trial: false,
+			data: { test_part: 'fixation' }
+		};
+
+   
+    var test = {
+        type: "image-keyboard-response",
+        stimulus: jsPsych.timelineVariable('stimulus'),
+        choices: function(){return [response_button]},
+        trial_duration: stim_duration,
+        response_ends_trial: false,
+        data: jsPsych.timelineVariable('data'),
+    }
+   
+    var mask = {
+        type: 'html-keyboard-response',
+        stimulus: " ",
+        choices: function(){
+				if (jsPsych.data.get().last(1).values()[0].rt == null){
+					return [response_button]
+				}else {
+					return jsPsych.NO_KEYS
+					} 
+				},
+        trial_duration: 900,
+        response_ends_trial: false,
+        on_finish: function(data){
+        	data.test_part = "mask"
+				if (online==true){
+				data.subject = username;
+				data.task = currentTask;
+				}
+            if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(3).values()[0].test_part == "fixation"){
+                data.trial_rt = jsPsych.data.get().last(3).values()[0].rt-fix_duration
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(1).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "test"){
+                data.trial_rt =  data.rt 
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(1).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "no-go"){
+                data.trial_rt =  data.rt 
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "test"){
+                data.trial_rt =  data.rt + stim_duration
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(2).values()[0].test_part == "no-go"){
+                data.trial_rt = data.rt + stim_duration
+            }
+            // else {
+            // 	data.trial_rt = jsPsych.data.get().last(2).values()[0].rt
+            // }
+            if (jsPsych.data.get().last(3).values()[0].test_part == "fixation" & jsPsych.data.get().last(3).values()[0].rt > 0 ){
+                data.correct = 2
+            } else if (jsPsych.data.get().last(2).values()[0].test_part == "no-go" & data.trial_rt == null){
+        		data.correct = 1
+        		data.trial_type = 'no-go'
+        		} else if (jsPsych.data.get().last(2).values()[0].test_part == "no-go" & data.trial_rt > 0){
+        		data.correct = 0
+	       		data.trial_type = 'no-go'
+    		} else if (jsPsych.data.get().last(2).values()[0].test_part == "test" & data.trial_rt > 0){
+    			data.correct = 1
+    			data.trial_type = 'test'
+    		} else if (jsPsych.data.get().last(2).values()[0].test_part == "test" & data.trial_rt == null){
+    			data.correct = 0
+    			data.trial_type = 'test'
+            }
+            if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(2).values()[0].rt > 0){
+                data.second_rt = jsPsych.data.get().last(2).values()[0].rt
+            } else if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(1).values()[0].rt > 0){
+                data.second_rt = data.rt + stim_duration
+            }
+    	}
+    }
+
+	
+    var test_procedure = {
+        timeline: [fixation,test,mask],
+        timeline_variables: test_stimuli,
+        repetitions: 1,
+        randomize_order: true
+    }
+    timeline.push(test_procedure);
+    
+    
+
+    var result = {
+   		 type: 'call-function',
+   		 func: function() {
+			var resultJson = jsPsych.data.get().csv();
+			jatos.submitResultData(resultJson)
+			}
+		}
+		timeline.push(result);
+		
+		/* define debrief */
+		var debrief_block = {
+ 			type: "html-keyboard-response",
+ 			choices: [' '],
+ 			stimulus: function () {
+ 		 		return "<p>You have now completed the experiment.  </p> " +
+ 						"<p><b> Please press the space bar to finalise results and return to Prolific.</b></p>"+
+				 		"<p> Thank you!</p>"}
+ 		};
+ 		timeline.push(debrief_block);
+
+
+
+
+		/* start the experiment */
+	jatos.onLoad(function() {
+        if (online){
+				username = jatos.urlQueryParameters.PROLIFIC_PID;
+				var currentStudy = jatos.urlQueryParameters.STUDY_ID;
+				 currentTask = jatos.urlQueryParameters.TASK_ID;
+		}
+		jsPsych.init({
+ 			timeline: timeline,
+  			on_finish: function() {
+            if (online){
+			   var endLink = "https://app.prolific.co/submissions/complete?cc=" + currentStudy;
+					jatos.endStudyAndRedirect(endLink);	   
+           } else{
+       		jatos.endStudy();
+  			}
+  		}
+	});
+});
+</script>
+
+</html>

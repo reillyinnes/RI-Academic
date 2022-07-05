@@ -1,0 +1,547 @@
+---
+title: "PMwG Log-Likelihood Functions"
+author: "Reilly Innes"
+date: 2021-05-12
+categories: ["R"]
+tags: ["pmwg", "modelling"]
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<p>A blog post to help with writing log likelihood functions to be used in PMwG. The examples shown in the <a href="https://newcastlecl.github.io/samplerDoc/">PMwG Sampler Doc</a> are quite specific, and so this blog aims to outline the general process of constructing a likelihood function. This blog is probably most useful for anyone who is looking for more info on how to make these functions for different RT models, or any general probability based hierarchical models. Probability based modelling involves working out the probability of some data given a model (and certain model parameter values). This could be evidence accumulation models, signal detection theory models, categorisation models and many, many more.</p>
+<p>To get started with PMwG, you’ll need some data - which can be any shape and can take any values, as long as there is a <code>subject</code> column which identifies the separate subjects - and a likelihood function - which calculates the likelihood of data given some parameter values. The data can be small or large, but should have multiple entries per person. Further, the data should be able to be split be subject column (i.e. <code>subject_i &lt;- data[data$subject==i,]</code>) and will link closely to the structure of the likelihood function. For example, in the SDT example in <a href="https://newcastlecl.github.io/samplerDoc/pmwg-sampler-and-signal-detection-theory.html">Chapter 2</a>, the data for the fast likelihood shows 16 possible values for each participant, which counts the number of responses in each cell of the design. In the likelihood function in Chapter 2, probability is calculated for each response type and is multiplied by the number of these responses (from the column <code>n</code>). This shows that the data can take any form, as long as it is accounted for in the function.</p>
+<div id="writing-log-likelihood-functions" class="section level1">
+<h1>Writing Log-Likelihood Functions</h1>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p>PMwG is a Bayesian hierarchical model sampling method proposed by Gunawan et al., (2020). In our PMwG sampler documentation, there are several examples of (and countless references to) writing your log likelihood function. For anyone new to modelling, or just new to this style of modelling, this step is the equivalent of STAN and JAGS model.text files. The way these operate though is vastly different.</p>
+<p>The main purpose of the log likelihood function, which I’ll refer to as LL from here on, is to return a single logged likelihood value. This value can be thought of as a probability, or marginal likelihood, of some data given some model parameters under this model. If this stuff and modelling is all pretty familiar to you, you can skip straight to the “How to Make Your LL function” section.</p>
+<p><strong>NOTE</strong>: For people new to this kind of modelling, by sampling, here I mean “training” your model on the data. This is done in a Markov Chain Monte-Carlo (MCMC) kind of way for PMwG, where values are selected when they are <em>good</em> on each iteration, until the model is trained to be in the best place. We call it “sampling” as we are sampling the parameter space (i.e. all possible values of parameters), of which we need many plausible values at the end so that we can process these in post (i.e. essentially if we only get one “sample” of parameters, we restrict ourselves, sampling lots of good values allows us to see the variance and do more accurate posterior calculations). Later on, after the model is <em>trained</em>, we may do anpother type of sampling where we sample “posterior predictive data” - i.e. we use the trained model parameters to generate data. For this second kind of sampling, I’ll try and refer to it as “generating”.</p>
+<p>Usually, for data, we can easily return the density of a value given some input. For example, if I’d like to know the probability of a response coming from a certain normal distribution, i could do;</p>
+<pre class="r"><code>value &lt;- 3
+m &lt;- 4 #mean
+s &lt;- 0.5 #standard deviation
+dnorm(x=value, mean=m,sd=s, log=FALSE) #density function
+## [1] 0.1079819</code></pre>
+<p>Which returns a probability value. Plotting this shows us a little bit more;</p>
+<pre class="r"><code>ggplot(data = data.frame(x = c(2, 6)), aes(x)) +
+  stat_function(fun = dnorm, n = 101, args = list(mean = 4, sd = 0.5)) + ylab(&quot;&quot;) +
+  theme_bw()+geom_vline(xintercept=3, colour=&quot;red&quot;)</code></pre>
+<p><img src="staticnormalcurve-1.png" width="672" /></p>
+<p>And so this looks about right. There’s a 10% chance this response is under this distribution. So now we know that we can get the density of data for values. If i change log to <code>TRUE</code>, i get the log likelihood for these <em>parameters</em> and the data point I have. Lets see what this would look like;</p>
+<pre class="r"><code>
+dnorm(x=value, mean=m,sd=s, log=TRUE)
+## [1] -2.225791</code></pre>
+<p>For PMwG we need to return the log-likelihood so that the values are useful to the algorithm. This also means we can add values together rather than multiplying probabilities together - and this protects against tiny values.</p>
+<p>In a modelling scenario, we would repeat this density calculation many times (i.e. for each data point). But what if there were two conditions, which differed for the mean of the distribution? The distributions might be hypothesized to look like this for example;</p>
+<p><img src="staticnormalcurve2-1.png" width="672" /></p>
+<p>Now we can check different data points for different conditions. Lets imagine a person’s responses in condition 1 were 4, 3 and 3.5 and in condition 2 were 2, 2.1 and 4. Using the same method as above, we can calculate the probability of these responses (data) given some parameters (here, the parameters are the mean and standard deviation, but we only vary the mean).</p>
+<pre class="r"><code>values_1 &lt;- c(4,3,3.5) #data for condition 1
+values_2 &lt;- c(2,2.1,4) # data for condition 2
+m1 &lt;- 4
+m2 &lt;- 2
+s &lt;- 0.5
+cond1 &lt;- dnorm(x=values_1, mean=m1,sd=s, log=FALSE)
+cond2 &lt;- dnorm(x=values_2, mean=m2,sd=s, log=FALSE)
+cond1
+## [1] 0.7978846 0.1079819 0.4839414
+cond2
+## [1] 0.7978845608 0.7820853880 0.0002676605</code></pre>
+<p>So we can see here that the two means we’ve proposed are pretty good guesses for the probability of these responses. In the PMwG algorithm, each particle proposes new guesses for the parameters for each subjects’ data. These values are then input into the model (similar to above), and then the sum of these logged values is returned. The particle with the highest log likelihood is chosen on each iteration so that eventually, the best parameter values are chosen for each subjects’ data.</p>
+<p>The model above is a model that assumes that responses come from normal distributions which may differ across conditions. If there was no difference in conditions, then PMwG would likely return equivalent mean parameter values (m1 and m2). This is a simple model, and so there is much more complexity to add before reaching a full drift diffusion or LBA model. In the next section I outline some considerations for modelling and then steps to creating your likelihood function.</p>
+<div id="linking-models-and-lls" class="section level3">
+<h3>Linking Models and LLs</h3>
+<p>It’s important to note here about how LLs and models link. You may think the LL <em>is</em> the model, and it kind of is. We use the LL function to <em>estimate the likelihood under the model</em> - that’s pretty clear from above. So how do I fit my model in? Well this comes in the call to the density function (like dnorm or dLBA). Many density functions for probability models already exist in a variety of packages. These functions are often detailed in papers, and so if a density function does not exist, you can still easily calculate the density for models given these equations in papers – although it is likely someone has already done this for you. If a density function does exist, this is usually as easy as inputting the observations (data) and the parameter values. For some examples of this see the <a href="https://cran.r-project.org/web/packages/rtdists/rtdists.pdf">rtdists package</a></p>
+</div>
+</div>
+<div id="whats-the-purpose-of-modelling-your-data" class="section level2">
+<h2>What’s the purpose of modelling your data?</h2>
+<p>The first question to ask is “what’s the purpose of modelling my data?” or “what should the modelling tell me about the data?”. There are many different flavours of answers to this question which should be considered from the outset of any experiment/modelling exercise. These ‘flavours’ fall into several main categories.</p>
+<ul>
+<li>selective influence</li>
+<li>model comparison</li>
+<li>comparing groups</li>
+<li>finding the ‘best’ model</li>
+</ul>
+<div id="selective-influence" class="section level3">
+<h3>Selective influence</h3>
+<p>Selective influence is a manipulation used to check whether a parameter maps to the appropriate parameter. For example, in a model where a parameter was thought to map to memory strength, then values for this parameter should be higher in conditions where memories are stronger or more deeply encoded (and not other parameters of the model). This is a type of experiment we do to test the validity and reliability of our models to make sure that they capture the effects we are interested in.</p>
+</div>
+<div id="model-comparison" class="section level3">
+<h3>Model comparison</h3>
+<p>Model comparison is a highly common practice in statistical methods which involves comparing different model accounts of the data. In the PMwG documentation, we briefly touch on how to compare models and different comparison methods. For the purposes of writing an LL however, this often involves writing several different LLs which vary (in parameters or models used) and running them separately. The results from these are then compared in model comparison methods. An example of a model comparison could be from the above example, where we might compare the descriptive adequacy of normal distributions to truncated normal, uniform distributions, log normal and exponential distributions to decide which best describes the data.</p>
+</div>
+<div id="comparing-groups" class="section level3">
+<h3>Comparing groups</h3>
+<p>Comparing groups is highly important for psychology and other sciences, especially in modelling exercises, as we may wish to discover <em>how</em> groups differ in underlying parameters or even <em>if</em> they differ. There are many varying ways of doing this. In PMwG we can do between-subjects model fits or we may run the models separately for the different data sets and compare parameter outputs.</p>
+</div>
+<div id="finding-the-best-model" class="section level3">
+<h3>Finding the ‘best’ model</h3>
+<p>Similar to model comparison, finding the best model is often done when researchers aim to describe certain behavior or data. In finding the best model, one may avoid fitting the full model space so as to reduce the complexity (and not limit flexibility) of models. After this, complexity may be added in to capture more of the data. This is often done by fitting a model, checking the model to see how well it did, and then adding in parameters or complexity to see if this can help improve the model fit. This can also grow into a model compariosn exercise, where the models to compare do not cover the full model space.</p>
+</div>
+<div id="so-whats-the-point" class="section level3">
+<h3>So what’s the point?</h3>
+<p>Evidently, there are many different methods for modelling that achieve different outcomes, and this can influence how we construct our LLs. For now though, we’re going to stick with the “finding the best model” approach.</p>
+</div>
+</div>
+<div id="which-model-will-capture-the-effects" class="section level2">
+<h2>Which model will capture the effects?</h2>
+<p>So now you have the purpose of your model, you need to ask what kind of model will capture the effects. In most of the research I do, I’m working with response times and decision making, so I work with evidence accumulation models. For these models, I’m lucky because the density functions are already written. For many applications this is the case, although in some, you may have to put in some extra effort to write your own density functions.</p>
+<p>The effects you’re looking at are important for considering what models you’ll use. Being in your field, you’ll probably already know an array of different models that exist and are evidence based that you will want to fit. But for now, lets go through some key considerations.</p>
+<div id="what-type-of-model-is-needed-to-answer-the-purpose" class="section level4">
+<h4>What type of model is needed to answer the purpose?</h4>
+<p>In the example I gave above about model comparison, I talked about comparing different distributions. For the purpose of this question (i.e. what distribution do these responses come from), then these models (i.e. different distributions) answer the purpose. For a question where I wanted to know where people set their mean and sd given I think the distribution is normal - this would require only a normal distribution and looking at the PMwG parameter estimates.</p>
+<p>In an evidence accumulation model, I may want to know about start point variability or within trial drift variability, and so it is better for me to use the DDM rather than LBA, as these parameters are not evaluated by the LBA. Put simply, make sure the model you use answers the purpose you set out to achieve.</p>
+</div>
+<div id="is-this-model-flexible-for-my-effects" class="section level4">
+<h4>Is this model flexible for my effects?</h4>
+<p>Secondly, it’s important to consider the flexibility of the model and whether the model will allow you to capture effects. For example, fitting an exponential curve to data could really restrict the space I’m sampling (i.e. positive only and exponential values), and may bias models towards inflated values which don’t capture the true tails of the distributions of my responses. Obviously this is an extreme example, but this needs to be considered when planning which model to use.</p>
+</div>
+<div id="is-your-data-suitable" class="section level4">
+<h4>Is your data suitable?</h4>
+<p>The next consideration is with your data. This should probably come earlier, or even before the experiment has been done. Remembering that PMwG is for hierarchical modelling, which means we get both group and individual level parameter estimates. If we wanted to estimate means and standard deviations for the top example, this would work fine - we could collect lots of data from a large sample and then see how individuals set their means (and sd’s) for the two conditions. This would give us both individual estimates, but also will allow us to see group level estimates.</p>
+<p>However, if we take only one data point per person and randomly allocate people to conditions, this causes trouble. First of all, at the individual level, we will not have enough data to fit models. Secondly, for the m1 and m2 parameters, people would be missing values, and so this estimated value would revert to the prior, thus being uninformative at individual subject level and less useful at the group level. Evidently, we need to collect enough data to fit our models, but also consider our experimental manipulations - ensuring we have enough data in each cell of the design. This extends to the <em>type</em> of design, where between-subjects effects become difficult to account for. This can be done, but experimental rigor is sacrificed as it either requires separate fitting or uninformed random effects.</p>
+</div>
+<div id="what-will-the-models-priors-be" class="section level4">
+<h4>What will the models priors be?</h4>
+<p>Finally, it’s important to consider priors. PMwG uses a multivariate normal prior (and Huang and Wand’s (2013) prior on the variance). This isn’t super important for <em>using</em> the sampler, but is important to the methodology. What’s important for using the sampler, is that you specify the prior mean and mean variance (remembering this is on the real number line). For most models we do, we generally set the mean at 0 and the variance at 1, but this may be too restrictive for some models. Further, you should consider parameter transformations you may undertake and how these parameters will appear <strong>before</strong> they are transformed. For example we usually take the exponenital of input parameters in LBA modelling to ensure they’re strictly positive, this means the exp of 0 is 1, and such our prior within the model is 1. This is also the case for variance, where the exponential of -1 is 0.37 and the exponential of 1 is 2.72 which would be the case for one standard deviation either side of the mean in this example.</p>
+<p>An example of these priors are shown below;</p>
+<pre class="r"><code>
+priors &lt;- list(
+  theta_mu_mean = rep(0, length(pars)),
+  theta_mu_var = diag(rep(3, length(pars)))) 
+</code></pre>
+</div>
+</div>
+<div id="what-are-the-important-effects" class="section level2">
+<h2>What are the important effects?</h2>
+<p>So we now know our purpose and we’ve chosen a model to fit. Next things to consider are the effects. Most of the time, you’ll know the effects you’re interested in because these will form the research questions <em>and</em> will be evident from descriptive statistics. These are effects like condition 1 vs condition 2 from our top example, but could also be related to stimuli, responses and more. Lets go through some key considerations when designing the LL and the experiment.</p>
+<div id="experimental-manipulations" class="section level4">
+<h4>Experimental manipulations?</h4>
+<ul>
+<li>What were the manipulations in the experiment?</li>
+<li>Were these between or within subjects?</li>
+<li>What would we actually be looking for in the data (i.e. differences in response times, accuracy, choice proportions etc)?</li>
+</ul>
+</div>
+<div id="how-do-manipulations-manifest" class="section level4">
+<h4>How do manipulations manifest?</h4>
+<p>From these experimental manipulations, we need to consider how these might manifest in the cognitive model. In a cognitive model, the parameters relate to underlying cognitive processes or representations. Consequently, we should propose models, and parameterisations, that relate to our experimental conditions. This might mean that in a 3 parameter model for a 3 condition experiment, we could have up to 9 parameters (or more if there was added model complexity), where for each condition, the model has 3 unique parameters. We also might hypothesize that in the 3 parameter model for the 3 condition experiment, that 1 parameter is fixed across conditions, while the other two vary. Comparing the 9 parameter model to the 7 parameter model (and other combinations) becomes a model comparison question.</p>
+<p>Working out how these manipulations may manifest is highly important in modelling – both going forward and looking back. For example, when planning an experiment that involves modelling, one should consider the type of modelling question and the best experimental manipulation to implement to answer this question. When planning LLs, one should consider how the experimental manipulation would logically, and rationally, map to parameters. This is not only important for the model, but is vital for drawing clear conclusions.</p>
+</div>
+<div id="group-differences" class="section level4">
+<h4>Group differences</h4>
+<p>It’s also important to consider potential group differences when writing LLs. Where group differences exist, we may see the model under-fitting the data, however, including these effects in the LL could lead to uninformed cells in the model. If this is the case, it may be best to run the model separately for the different groups (but this method also has a weakness in that the fits are not informed by one another).</p>
+</div>
+<div id="important-effects-are-these-present-in-descriptives-what-does-the-literature-say" class="section level4">
+<h4>Important effects? Are these present in descriptives? What does the literature say?</h4>
+<p>If we do expect to see effects of manipulations in the model, we should first check if the effects of manipulations can be seen in the descriptives. It’s important that the manipulation actually worked before we start explaining how/why it worked. This can also be useful to see main and interaction effects which could be important to the model.</p>
+</div>
+</div>
+<div id="considerations-of-writing-the-ll" class="section level2">
+<h2>Considerations of writing the LL</h2>
+<p>Finally, we’ve made it to the LL function! You’ve now thought about all components of your data and your experiment (probably). But, before writing this, lets take some time for final considerations.</p>
+<div id="consider-the-stimuli-and-responses" class="section level4">
+<h4>Consider the stimuli and responses</h4>
+<p>When considering your stimuli and responses, consider how these may vary across conditions, how these might vary with response types/proportions/biases and what effects these may have on the underlying cognitive process. It is often the case that certain stimuli or responses can lead to inconsistencies in the model (and in the descriptives). Consequently, consider doing a deep dive into the descriptives first up to check for any weirdness - then decide what to do with these. It might also be an idea to run a full model (in addition to other models) to ensure nothing strange is going on in certain conditions or with certain parameters.</p>
+</div>
+<div id="consider-your-data" class="section level4">
+<h4>Consider your data</h4>
+<p>Following on from the above, when doing a deep dive into the data, consider cut points for outliers and standardization. As PMwG fits hierarchical models, it is often unlikely that corrections are required (such as logging RTs or minimizing the impacts of extreme data), however, occasionally data may need to be removed, such as for bad participants or lapses of attention (where these aren’t fit by the model).</p>
+</div>
+</div>
+<div id="how-to-make-your-ll" class="section level2">
+<h2>How to make your LL</h2>
+<p>In this section, I’ll detail the methods I generally use to make my LL function, and in the next section, I’ll test it. There are six main steps to making a LL.</p>
+<ol style="list-style-type: decimal">
+<li>Prepare the parameters to be used</li>
+<li>Ensure no bad parameter values</li>
+<li>Map parameters to conditions</li>
+<li>Make the ‘sample’ component</li>
+<li>Make the ‘likelihood’ component</li>
+<li>Return</li>
+</ol>
+<p>PMwG samples random values on the real line for the parameters of the model. These values are taken from a distribution of values centered on the group mean or the individual mean, with some variance, in a multivariate normal distribution. So for example, for 3 true parameter values in a model (say -1, 2 and 9), PMwG will propose 3 values as a particle (where we have n particles) for n iterations, constantly returning the most likely combination of parameters. On iteration 1, three values are selected at random (say 0,0 and 0) and a likelihood is returned. On the second step, n particles more values will be proposed using the previous particle as a reference point (from both the group and individuals previous particle) and the winner will be selected (say 0,1 and 5). This process happens over and over until the posterior space is reached.</p>
+<div id="prepare-the-parameters-to-be-used" class="section level4">
+<h4>Prepare the parameters to be used</h4>
+<p>As PMwG returns values on the real number line, we first have to prepare our parameters to be used properly in the function. This may require corrections, such as taking the exponent of these values (as is done by Gunawan et al., 2020, JMP), converting a number to between 0 and 1 (for probability parameters), or may require a mathematical function, for example, certain parameters may become 1/parameter. This should be done early in the LL.</p>
+<p><strong>NOTE</strong>: if there are any transformations or corrections carried out, it is important to remember and account for these when evaluating the output and generating posterior predictive data.</p>
+<pre class="r"><code>
+ll &lt;- function(x, data, sample=FALSE){
+  x = exp(x)</code></pre>
+<p>In this example, and those shown in the sampler documentation, we use an exponential transformation. This is to ensure parameter values are always greater than 0 (as the model doesn’t work if values are below 0). Evidence for this transformation comes from the main PMwG paper by David Gunawan and colleagues (Gunawan, et al., 2020, JMP). It is not always necessary to carry out transformations, however, it is important to consult the literature for advice on general practice (especially keeping in mind that PMwG samples from the real line).</p>
+</div>
+<div id="ensure-no-bad-parameter-values" class="section level4">
+<h4>Ensure no bad parameter values</h4>
+<p>Secondly, to save computation time and protect against bad values, I often include code to exclude ‘bad’ parameters. For example, if specific parameters should be non-negative and a negative value is proposed from the PMwG algorithm, the LL automatically returns -1e10. Example of this is included below.</p>
+<pre class="r"><code>  if (!sample){
+    if (any(data$RT &lt; x[&quot;t0&quot;])) {  ### for this example, i need to make sure t0 is not below any RT, if there are RTs below t0, this is bad for the model
+    return(-1e10)
+  }
+
+
+if (x[&quot;b&quot;] &lt;= any(abs(c(x[&quot;b.1&quot;],x[&quot;b.2&quot;],x[&quot;b.3&quot;])))) {  # for this example, i need to add b.n to b, and so if there are negative b.n&#39;s this would make b below 0, which again is bad for the model
+    return(-1e10)
+  }
+  }</code></pre>
+<p>Here, x is the parameter vector, and the parameters have names such as “b”, “t0”, “b.1” etc. To refer to parameters, I use x[“b”] naming convention. You can also refer to these numerically, such as x[1], however, this is risky and can lead to potential errors. Naming is safer.</p>
+<p>I only use this when <code>sample = FALSE</code>, as this can mess up posterior predictive sampling.</p>
+<p>It’s important that if the density function cannot handle specific values (i.e. dLBA can’t work with negative values), then this safety check should be put in, so that NAs aren’t returned (which would break the sampling).</p>
+</div>
+<div id="map-parameters-to-conditions" class="section level4">
+<h4>Map parameters to conditions</h4>
+<p>Next up, I need to map parameters to conditions. I referred to this earlier when discussing experimental manipulation effects on the data/model. When I refer to mapping parameters to conditions, this means that parameters which refer to conditions are associated with the correct data. i.e. parameter “b.1” is associated with condition 1 and so fourth. All this step does is <strong>ensure that the correct parameter values are input into the model for each data point evaluated.</strong></p>
+<p><strong>NOTE</strong>: In process models, parameters, like A and B used in the examples below, often refer to specific components. For example, in cognitive modelling, parameter A may refer to the individuals bias in responding and parameter B could refer to the sensitivity of responding. Many models used in cognitive modelling link to specific cognitive processes or structures, and links to these processes are made through selective influence studies. There is often a significant amount of literature justifying parameters in a model and underlying processes these relate to.</p>
+<p>When writing your LL you could do parameter:condition associations line by line, and I recommend this at first, or through vectorising or other methods. The line by line method is slow, but also more accurate. Later on you can move to more advanced methods which quickly loops over conditions. Note that the more calls you make to the density function, and the more loops in the function, lead to more time.</p>
+<p>I’ve included two examples below of mapping parameters to conditions, in both slow and fast ways. The slow way is computationally inefficient, but is quite safe. The fast way is fast, but risks parameters not mapping as effectively. You should write your function in both ways, then compare them to ensure the output is the same and correctly mapping. For more info on this, see <a href="https://newcastlecl.github.io/samplerDoc/forstmannChapter.html#writellFunchttps://newcastlecl.github.io/samplerDoc/forstmannChapter.html#writellFunc">here</a></p>
+<div id="slow" class="section level5">
+<h5>Slow</h5>
+<pre class="r"><code>
+parameter.b = parameter.A = numeric(nrow(data)) # first i create a vector to store the values in
+parameter.A = x[&quot;A&quot;] #here A is the same across conditions, so i store A in here
+for (i in 1: nrow(data)){   #here i loop across rows to see which condition the data relates to and store the appropriate parameter for that row - either b.1 or b.2
+ if(data$condition[i]==1)
+   parameter.b[i] &lt;- x[&quot;b.1&quot;]
+} else if(data$condition[i]==2) {
+  parameter.b[i]&lt;- x[&quot;b.2&quot;]
+}
+</code></pre>
+</div>
+<div id="fast" class="section level5">
+<h5>Fast</h5>
+<pre class="r"><code>
+parameter.b = parameter.A = numeric(nrow(data)) # first i create a vector to store the values in
+parameter.A &lt;- x[&quot;A&quot;] #here A is the sham across conditions, so i store A in here
+parameter.b &lt;- x[c(&quot;b1&quot;, &quot;b2&quot;)][data$condition] #here i do the same as above, in a faster way. 
+</code></pre>
+<p>Evidently, there are many ways of doing this to make this operation more computationally efficient. You may also find you need to call the density function several times (i.e. density for one subset of data, and then for another or even in a line by line way), however, the less calls the better (faster). Also, you may find that you have main and interaction effects in the model, these are fine too, and there are many ways of implementing this, but need to be closely checked. Examples of this can be seen below.</p>
+<p><strong>In sum, for each trial, we need to ensure that the call to the density function is referring to the correct parameter values. </strong></p>
+</div>
+</div>
+<div id="main-and-interaction-effects" class="section level4">
+<h4>main and interaction effects</h4>
+<p>In this example code snippet below, I show slow and fast ways for mapping out parameters across conditions. Here, this model includes all types of effects (similar to that in an ANOVA), where each cell of a design contains a parameter. This could also only look at main effects (i.e. only b.1 and b.2 and only slow and fast without having the interaction) or could include some interactions in addition to the main effect. This becomes particularly important in designs with more experimental factors.</p>
+<div id="slow-1" class="section level5">
+<h5>Slow</h5>
+<pre class="r"><code>
+parameter.b = parameter.A = numeric(nrow(data)) # first i create a vector to store the values in
+parameter.A = x[&quot;A&quot;] #here A is the same across conditions, so i store A in here
+for (i in 1: nrow(data)){   #here i loop across rows to see which condition the data relates to and store the appropriate parameter for that row - either b.1 or b.2
+ if(data$condition[i]==1)
+   if(data$speed[i]==&quot;slow&quot;){
+      parameter.b[i] &lt;- x[&quot;b.1.slow&quot;]
+   } else if(data$speed[i]==&quot;fast&quot;)
+      parameter.b[i] &lt;- x[&quot;b.1.fast&quot;]
+} else if(data$condition[i]==2) {
+     if(data$speed[i]==&quot;slow&quot;){
+      parameter.b[i]&lt;- x[&quot;b.2.slow&quot;]
+     } else if(data$speed[i]==&quot;fast&quot;){
+       parameter.b[i] &lt;- x[&quot;b.2.fast&quot;]
+     }
+}
+</code></pre>
+</div>
+<div id="fast-1" class="section level5">
+<h5>Fast</h5>
+<pre class="r"><code>
+parameter.b = parameter.A = numeric(nrow(data)) # first i create a vector to store the values in
+parameter.A &lt;- x[&quot;A&quot;] #here A is the same across conditions, so i store A in here
+
+for (cond in unique(data$condition)){
+  for (speed in unique(data$speed)){
+    parameter.b &lt;- x[paste0(&quot;b&quot;,cond,speed)]
+  }
+}
+</code></pre>
+<p>Again, this can be done in a variety of ways, but does require thorough checking to ensure parameters map correctly and effects carry.</p>
+</div>
+<div id="pointintercept-method" class="section level5">
+<h5>Point/intercept method</h5>
+<p>Another method for dealing with main and interaction effects is with a “point-intercept” method of parameter mapping. We often use this method to limit the number of parameters when the parameter space is growing. This method is similar to a treatment effect method used in many ANOVA analyses. This is referred to above when I allude to main and interaction effect parameters.</p>
+<p>For the point intercept method, there is a grand mean. For each specific condition, the parameter becomes the difference from the grand mean parameter. This means in our parameters, we have a grand mean parameter and a difference parameter. In the example above, the parameterisation is too simple, so lets look at two examples from the PMwG Doc in Chapters <a href="https://newcastlecl.github.io/samplerDoc/pmwg-sampler-and-signal-detection-theory.html">2</a> and <a href="https://newcastlecl.github.io/samplerDoc/forstmannChapter.html#the-speed-accuracy-tradeoff-in-perceptual-decisions">3</a>.</p>
+<p>In Chapter 2, an SDT model is used. For the parameterisation, the d’ is the difference between parameters. We could estimate a mean for non-targets, a mean for targets and a mean for lures. However, these values are arbitrary and so could move along the scale unconstrained. Instead, we set the mean of non-targets to 0. We then only need to calculate the distance (d’) from non-targets to lures and from non-targets to targets. So lets start with targets, we call this parameter d’. Then, all we need to do is add a d’ increment to the lures parameter (i.e. d’ + d’ increment) to get the mean. These parameters are all on the real line, and so the d’ increment could be negative, allowing the mean for lures to fall anywhere on the line.</p>
+<p>Secondly, in chapter 3, we use an LBA model. In this example, we could parameterise in a way where we have a grand mean for threshold with differences for the conditions. This means that threshold is constrained by the mean parameter, and then for the other parameters, we add an increment to see differences between conditions. This is especially useful if we had bias in responses, where threshold for left was different than threshold for right responses. In this example, we could do this;</p>
+<pre class="r"><code>
+bL=bR=numeric(nrow(data))
+for (cond in unique(data$condition)){
+bL&lt;-x[&quot;b.mean&quot;]+x[paste0(&quot;b.&quot;), cond]
+bR&lt;-x[&quot;b.mean&quot;]-x[paste0(&quot;b.&quot;), cond]
+}
+</code></pre>
+<p>In this example, the x[“b.i”] parameters need to be on the real line so that they can move the bias up or down for either responses (in each condition). This means that we should not take the exponential of these specific parameters at the start of the LL.</p>
+<p><strong>NOTE</strong>: This kind of function would also require a check so that the overall threshold parameter (after adding/subtracting the difference) couldn’t be negative, and so something like the below is needed;</p>
+<pre class="r"><code>if(!sample){
+  if (x[&quot;b&quot;] &lt;= any(abs(c(x[&quot;b.1&quot;],x[&quot;b.2&quot;],x[&quot;b.3&quot;])))) {
+      return(-1e10)
+  }
+}</code></pre>
+</div>
+</div>
+<div id="make-the-sample-component" class="section level4">
+<h4>Make the ‘sample’ component</h4>
+<p>Next up, we make the sample function for when sample = TRUE. This is not essential for PMwG to work, but does make post-processing much easier. In this step, we use the parameters above to create data with random generation functions (such as rnorm, rbinom or rLBA). This generally requires one call to a random generation function with the parameters created above. We usually do this as a loop over rows to protect against any weirdness from the generating function. This is slower, but safer (and is only called a handful of times).</p>
+<pre class="r"><code>    data$rt&lt;-NA
+    for (i in 1:nrow(data)){
+      tmp &lt;- rpackage::rfunction(n=1, A = parameter.A[i], b = parameter.b[i])  ## rpackage::rfunction could be for example rtdists::rLBA
+      data$rt[i]&lt;-tmp
+    }
+</code></pre>
+</div>
+<div id="make-the-likelihood-component" class="section level4">
+<h4>Make the ‘likelihood’ component</h4>
+<p>Next up, we make the density function for when sample = FALSE. This <strong>IS</strong> essential for PMwG to work. In this step, we use the parameters above to obtain the probability of each data point for the given parameters. This means that following the parameter specifications above, the density for data from trial i is calculated under the correct parameter inputs (i.e. parameter.A[i] and parameter.b[i]). So on each trial, we should see density[i] (of data[i]) = model_function(b=parameter.b[i], A=parameter.A[i]).</p>
+<p>Evidently, you could do this as a loop over rows, however, most density functions allow you to specify vectors of data and parameters (which is what we created above). The likelihood is generally obtained through density functions (such as dnorm, dbinom or dLBA), however, you may need to specify your own depending on the model.</p>
+<pre class="r"><code>    out &lt;- numeric(nrow(data))
+    out &lt;- rpackage::dfunction(data=data$rt, A = parameter.A[i], b = parameter.b[i]) ## rpackage::dfunction could be for example rtdists::dLBA
+    }
+</code></pre>
+<p>Usually, density functions already exist or are pre-specified - many R packages are available for these. If a density function does not already exist, you probably have a mathematical model in mind. It’s important that this is tractable and able to recover effectively.</p>
+<!-- To check recovery, see next blog post.  -->
+</div>
+<div id="return" class="section level4">
+<h4>Return</h4>
+<p>Finally, you need to return the likelihood (or randomly generated data). If you have multiple probabilities, this will require combining these. We generally do this through;</p>
+<pre class="r"><code>if(!sample){
+return(sum(log(out)))
+}
+</code></pre>
+<p>Although occasionally, you may want to protect against really small values, and so we do;</p>
+<pre class="r"><code>
+bad &lt;- (out &lt; 1e-10) | (!is.finite(out))
+    out[bad] &lt;- 1e-10
+    out &lt;- sum(log(out))
+</code></pre>
+<p>or;</p>
+<pre class="r"><code>
+return(sum(log(pmax(out,1e-10)))
+</code></pre>
+<p>For returning data when sample = TRUE, you should write your sample function similar to above to ensure that the generated data is returned (not the original data). Then, we just need to return data;</p>
+<pre class="r"><code>if(sample){
+return(data)
+}
+</code></pre>
+<p><strong>WARNING</strong>: if you return data, you need to ensure that this is only when sample = TRUE and - for a posterior generating function to work - must replace the values in the actual data. For more on simulating from the posterior, see <a href="https://newcastlecl.github.io/samplerDoc/forstmannChapter.html#genppdatafunc">here</a></p>
+</div>
+<div id="full-function" class="section level3">
+<h3>Full function</h3>
+<p>Shown below is how your full likelihood function will look;</p>
+<p>(NOTE: this won’t work because it’s all example text)</p>
+<pre class="r"><code>
+LL &lt;- function(x,data,sample=FALSE){
+  #note, x is a vector of named parameter values
+  # data is data - but in pmwg will be data for each subject
+  #sample = FALSE should be default. if true, uses x to randomly generate. If false, uses x for density. 
+  
+  #transform vector of parameters
+  x&lt;-exp(x)
+
+ 
+  #map
+  parameter.b = parameter.A = numeric(nrow(data)) # first i create a vector to store the values in
+  parameter.A &lt;- x[&quot;A&quot;] #here A is the same across conditions, so i store A in here
+  for (cond in unique(data$condition)){
+    for (speed in unique(data$speed)){
+      parameter.b &lt;- x[paste0(&quot;b&quot;,cond,speed)]
+    }
+  }
+
+  #generate
+  if(sample){
+    data$rt&lt;-NA
+    for (i in 1:nrow(data)){
+      tmp &lt;- rpackage::rfunction(n=1, A = parameter.A[i], b = parameter.b[i])  ## i.e. rtdists::rLBA
+      data$rt[i]&lt;-tmp
+    }
+ 
+  #return
+  return(data)
+ 
+  } else{
+     #checks
+    if(!sample){
+     if (any(data$RT &lt; x[&quot;t0&quot;])) {  
+       return(-1e10)
+     }
+    }
+    out &lt;- numeric(nrow(data))
+    out &lt;- rpackage::dfunction(data=data$rt, A = parameter.A[i], b = parameter.b[i]) ## i.e. rtdists::dLBA
+    return(sum(log(pmax(out,1e-10)))    
+     }
+  }
+</code></pre>
+</div>
+</div>
+<div id="testing-your-ll-function." class="section level2">
+<h2>Testing your LL function.</h2>
+<p>Finally, it’s <strong>REALLY</strong> important to test your likelihood function. In this section, I’ll go through a couple of methods I’ve given titles to.</p>
+<div id="line-by-line-testing" class="section level4">
+<h4>Line by line testing</h4>
+<p>For this method, first make some x values, for example;</p>
+<pre class="r"><code>pars&lt;- c(&quot;A&quot;,&quot;b.1&quot;,&quot;b.2&quot;) #names of params
+x &lt;- c(1,0.5,0.7) #make sure you give different conditions different values so they don&#39;t all look the same and its confusing. 
+names(x)&lt;-pars
+</code></pre>
+<p>From here, use this x and your data (or a subset) to work through each line of the function. What you should see is values for the correct parameters mapping to the correct conditions in your vector (for example x[“b.1”] matches with data that is from condition 1 etc). In our example above, parameter.A will be a vector of 1’s (x[“A’]=1) and parameter.b will be a vector of 0.5’s and 0.7’s which match to data$condition.</p>
+<p>From here, work through your LL running each line (or loop) of the function to ensure there are no errors, values map correctly, and the density function works correctly. This means that parameter vectors should use the correct conditions and values and output as expected.</p>
+</div>
+<div id="alternate-input-values" class="section level4">
+<h4>Alternate input values</h4>
+<p>On the topic of density functions working correctly, this is the next step. For this step, again, create some parameter values. Then just run your LL with these values and data. Then, make some new parameter vectors, and repeat. What we should see is that;</p>
+<ol style="list-style-type: lower-alpha">
+<li>the likelihood changes with different input values</li>
+<li>the likelihood changes in the right direction (i.e. for silly parameter values, a low likelihood is returned)</li>
+<li>the likelihood should quickly return bad likelihood for bad parameter values (as discussed above)</li>
+</ol>
+<p>This is a quick and easy test that can be done many times and should give you some idea of whether your likelihood is ‘working’. There are more thorough and robust checks shown in <a href="https://newcastlecl.github.io/samplerDoc/forstmannChapter.html#checking-the-lba-log-likelihood-function">Chapter 3</a> of the sampler doc, but this is a good first pass.</p>
+</div>
+<div id="profile-plots" class="section level4">
+<h4>Profile Plots</h4>
+<p>Another strong way to test the likelihood is with profile plots. This is a basic kind of simulation and recovery exercise where we first generate some data using the sample = TRUE argument and then test different values using the sample = FALSE argument. Here, I use a function from the <a href="https://github.com/NewcastleCL/pmwg_toolkit">PMwG Toolkit</a> to make my profile plots.</p>
+<pre class="r"><code>#### profile plot function
+#### Contributed by Reilly Innes
+#### Use pwmg_profilePlot on an initiated PMwG object to ensure your likelihood functions correctly
+#### This function takes in the initial theta_mu estimates and simulates a small amount of data based on these
+#### plots are returned which show how the likelihood changes as the generating value changes
+#### For the different generating values, we use small increments (which can be negative or positive)
+#### We expect to see inverse U shaped curves, where the likelihood is most likely at the generating value and falls away as we get further from the generating value
+
+#### NOTE: The likelihood function needs both sample = TRUE and sample = FALSE arguments to function correctly
+#### Also, avoid putting protective statements (like if(any(data$rt)&lt;t0) etc) at the beginning of the function
+#### These statements should go in the if(sample=FALSE) part
+require(ggplot2)
+require(tidyr)
+## Loading required package: tidyr
+require(pmwg)
+## Loading required package: pmwg
+
+pmwg_profilePlot = function(sampler, generating_values=NULL){
+  if(is.null(generating_values)){
+    #create generating values based on theta_mu
+    generating_values &lt;- sampler$samples$theta_mu
+    names(generating_values)&lt;- sampler$par_names
+  } else{
+    names(generating_values)&lt;-sampler$par_names
+  }
+  #make the test data set. here I use a tenth of the total data for speed
+  test &lt;- sampler$ll_func(x = generating_values,
+                  data = sampler$data[c(1:(nrow(sampler$data)/10)),],
+                  sample = TRUE)
+  # this is the number of values to test and plot. 
+  n_values &lt;- 9
+  tmp &lt;- array(dim=c(n_values,sampler$n_pars))
+  #here i make the increment, however, you may wish to make this smaller or larger.
+  #the increment here goes from theta_mu - .2 to theta_mu + .2, with n_values length
+  increment&lt;- seq(from=-.2, to=.2, length.out = n_values)
+  
+  for (i in 1:sampler$n_pars){
+    for (j in 1:n_values){
+      #need to use all generating values except the current parameter being tested
+      test_values &lt;- generating_values
+      #here we change the current parameter by adding the increment
+      test_values[i] &lt;- generating_values[i] + increment[j]
+      #test the likelihood given these new values and the test data
+      tmp[j, i] &lt;- sampler$ll_func(x = test_values, data=test, sample=F)
+    }
+  }
+  #prepare output for plotting
+  colnames(tmp)&lt;-sampler$par_names
+  tmp&lt;-as.data.frame(tmp)
+  tmp &lt;- tidyr::pivot_longer(tmp, everything(), names_to = &quot;pars&quot;, values_to = &quot;likelihood&quot;)
+  tmp$increment &lt;- rep(increment, each=sampler$n_pars)
+  ### next, plot these values for each parameter
+  ggplot2::ggplot(tmp, aes(x=increment, y= likelihood))+
+    geom_point()+
+    geom_line()+
+    facet_wrap(~pars, scales = &quot;free&quot;)+
+    theme_bw()+
+    geom_vline(xintercept = 0, color=&quot;red&quot;, alpha = 0.3)
+}
+</code></pre>
+<p>For this function, it is essential that both components of the likelihood (sample=<code>TRUE</code> and <code>FALSE</code>) work correctly. This means that parameters are first transformed and mapped before being used by each component. It also means any protective statements are limited to the sample = <code>FALSE</code> section. The function then takes in an initialised PMwG object (from the init function in PMwG - although you can also use a sampled object). Now let’s test this out with a simple LBA example from Forstmann (2008).</p>
+<pre class="r"><code>
+data&lt;- forstmann
+data$condition &lt;- as.factor(data$condition)
+
+lba_loglike &lt;- function(x, data, sample = FALSE) {
+  x &lt;- exp(x)
+
+  bs &lt;- x[&quot;A&quot;] + x[c(&quot;b1&quot;, &quot;b2&quot;, &quot;b3&quot;)][data$condition]
+  t0 &lt;- x[c(&quot;t0.1&quot;,&quot;t0.2&quot;,&quot;t0.3&quot;)][data$condition]
+  out &lt;- nrow(data)
+  if (sample) {
+    data$rt=NA
+    data$resp = NA
+    for (i in 1:nrow(data)){
+    out &lt;- rtdists::rLBA(n = 1,
+                         A = x[&quot;A&quot;],
+                         b = bs[i],
+                         t0 = t0[i],
+                         mean_v = x[c(&quot;v1&quot;, &quot;v2&quot;)],
+                         sd_v = c(1, 1),
+                         distribution = &quot;norm&quot;,
+                         silent = TRUE)
+    data$rt[i] &lt;- out$rt
+    data$resp[i] &lt;- out$resp
+    }
+    return(data)
+  } else {
+    if (any(min(data$rt) &lt; c(x[&quot;t0.1&quot;], x[&quot;t0.2&quot;], x[&quot;t0.3&quot;]))  ) {
+      return(-1e10)
+    }
+    out &lt;- rtdists::dLBA(rt = data$rt,
+                         response = data$resp,
+                         A = x[&quot;A&quot;],
+                         b = bs,
+                         t0 = t0,
+                         mean_v = x[c(&quot;v1&quot;, &quot;v2&quot;)],
+                         sd_v = c(1, 1),
+                         distribution = &quot;norm&quot;,
+                         silent = TRUE)
+    bad &lt;- (out &lt; 1e-10) | (!is.finite(out))
+    out[bad] &lt;- 1e-10
+    out &lt;- sum(log(out))
+    return(out)
+  }
+  }
+
+
+# Specify the parameters and priors -------------------------------------------
+
+# Vars used for controlling the run
+pars &lt;- c(&quot;b1&quot;, &quot;b2&quot;, &quot;b3&quot;, &quot;A&quot;, &quot;v1&quot;, &quot;v2&quot;, &quot;t0.1&quot;,&quot;t0.2&quot;,&quot;t0.3&quot;)
+priors &lt;- list(
+  theta_mu_mean = c(0,0,0,0,1,1,-3,-3,-3),
+  theta_mu_var = diag(c(1,1,1,1,2,2,0.1,0.1,0.1))
+)
+
+# Create the Particle Metropolis within Gibbs sampler object ------------------
+
+sampler &lt;- pmwgs(
+  data = data,
+  pars = pars,
+  prior = priors,
+  ll_func = lba_loglike
+)
+
+
+start_points &lt;- list(
+  mu = log(c(1,1,1,1,2,3,0.07,0.08,0.09)),
+  sig2 = diag(rep(.1, length(pars)))
+)
+
+
+sampler &lt;- init(sampler, start_mu = start_points$mu,
+                start_sig = start_points$sig2, display_progress = FALSE, particles = 250)
+
+pmwg_profilePlot(sampler)</code></pre>
+<p><img src="staticforstProfile-1.png" width="672" /></p>
+<p>From these plots we can see that for most of the parameters, there is a nice inverse U curve, which centers at 0 increment. This means that the generating value is also the most likely value for that parameter. This indicates that the parameter values simulate and recover well and our likelihood seems to function correctly. If you see different patterns, try using sensible start points or check line by line what could cause the function to return weird values (this could be due to one of the protective statements or could be due to parameters not mapping correctly).</p>
+</div>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Gunawan, D., Hawkins, G. E., Tran, M. N., Kohn, R., &amp; Brown, S. D. (2020). New estimation approaches for the hierarchical Linear Ballistic Accumulator model. <em>Journal of Mathematical Psychology, 96</em>, 102368.</p>
+<p>Huang, A., &amp; Wand, M. P. (2013). Simple marginally noninformative prior distributions for covariance matrices. <em>Bayesian Analysis, 8(2)</em>, 439-452.</p>
+</div>
+</div>

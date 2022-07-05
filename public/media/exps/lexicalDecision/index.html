@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<title>Lexical Decision Making </title>
+	<meta charset="UTF-8">
+	<script src="jspsych-6.3.0/jspsych.js"></script>
+	<script src="jspsych-6.3.0/plugins/jspsych-call-function.js"></script>    
+    <script src="jspsych-6.3.0/plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-image-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-button-response.js"></script>    
+    <script src="jspsych-6.3.0/plugins/jspsych-preload.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-fullscreen.js"></script>
+      <link href="jspsych-6.3.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+
+
+	
+</head>
+
+<body>
+	<script type='text/javascript'>
+	
+	
+	/* Script created by Reilly Innes (2021) for a 2 alternate forced choice task (decision making RT task) 
+	based on code provided on jspsych for simple choice rt experiment. The code takes images from the /img folder,
+	shows them on screen (randomly) and asks for participants to make a response. All variables and RTs are recorded in a csv file. 
+	Currently the script is set up to output to JATOS. 
+	In the script, there is first a welcome and instructions, then a practice block, then nblocks of testing and then a debrief block. 
+	
+	To include your own stimulus, delete all images from /img directory and paste your images there. 
+	Next take the R script to format the names of the images to stimuli. In this script, be sure to set correct responses. 
+	In the code, you can change any text to include instructions. 
+	A practice block with feedback is also included here. To change the length of the practice block, change the stimuli included. 
+	To set the number of blocks, change the nblocks variable.
+	To change the response keys (currently set as F and J), change the responseLeft and responseRight variables.
+	Note that these variables are also called for the correct responses to stimuli.
+	To use the same stimulus multiple times, you will have to change the code (and use jspsych repetitions functionality)
+	Alternatively, you can include repeats of the stimuli in the image folder, but this is randomised.
+	To include a set block order, make subfolders in /img and then make your test_stim into n arrays pulled from each subfolder (i.e. block 1 would be img/block1/ -> test_stim[1])
+	You can also add a post trial gap by adding in this variable in the test_procedure timeline after test.
+	You can change the fixation time in fixation; trial_duration. 
+	The practice block will run for as many trials as there are prac_stimuli (randomly showing these)
+	
+	For more details, contact reilly.innes@uon.edu.au. To cite this work use the citation;
+	
+	*/
+	
+	
+
+		/* create timeline */
+		var timeline = [];
+		var nblocks = 1;
+		var timeout = 4000;	
+		var tooFast = 200;
+		var postTrialGap = 1000;
+		var responseLeft = 'z';
+		var responseRight = '/';
+		var online = true;
+		var username; 
+		var currentTask;
+		if (online == true){
+			// username = jatos.urlQueryParameters.PROLIFIC_PID
+			// console.log(username)
+		}else{
+			var username;
+		}
+		var preload = {
+   			 type: 'preload',
+  			  auto_preload: true 
+		}
+		timeline.push(preload)
+		timeline.push({
+ 		 type: 'fullscreen',
+ 		 fullscreen_mode: true
+		});
+		
+		
+
+		/* define welcome message trial */
+		if (online){
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin.",
+			data: { subject: username }
+		};
+		}else{
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin."
+		};
+		}
+		timeline.push(welcome);
+		
+		
+		
+		var buttonRight = {
+			type: "image-keyboard-response",
+			post_trial_gap: 1000,
+			stimulus: 'img/keyboard-right.png',
+			prompt: "<br>"+
+					"<br>"+"Please press this right button.",
+			on_finish: function(data){
+				responseRight = data.response
+			}
+		};
+		
+		var buttonLeft = {
+			type: "image-keyboard-response",
+			post_trial_gap: 1000,
+			stimulus: 'img/keyboard-left.png',
+			prompt: "<br>"+
+					"<br>"+"Please press this left button.",
+			on_finish: function(data){
+				responseLeft = data.response
+			}
+		};
+		
+		
+		var correctButtons = {
+			type: "html-button-response",
+			choices: ['Yes', 'No'],
+			post_trial_gap: 1000,
+			stimulus: function(){
+			return "<p> The left response button is <strong>" + responseLeft.toUpperCase() + "</strong> and the right response button is <strong>" + responseRight.toUpperCase() + " </strong>. </p>" +
+			"<p> Are these correct? </p>"
+			},
+			on_finish: function(data){
+				if(responseLeft==responseRight){
+					goodButtons = 1
+				}else {
+				goodButtons =  data.response
+				}
+			}
+		};			
+		
+		
+		var buttons = {
+			timeline: [ buttonLeft,buttonRight, correctButtons],
+			loop_function: function(){
+				key_response = goodButtons;
+     	 		if(key_response == 1){
+       			 return true;
+      			} else {
+        		return false;
+      			}
+    		}
+		}
+		
+		
+  		timeline.push(buttons);
+
+		/* define instructions trial */
+		var instructions = {
+			type: "html-keyboard-response",
+			choices: jsPsych.NO_KEYS,
+			stimulus: function(){
+				return "<p>In this experiment, you will be shown a series of letter strings.</p>" +
+				"<p>You must decide if these strings are English words or not.</p>" +
+				"<p> The stimuli are a mix of common and uncommon words as well as non-words</p>" +
+				"<p>If the string is a <strong>word</strong>, " +
+				"press " + responseLeft.toUpperCase() + " ." +
+				"<p>If the string is a <strong>non-word</strong>, press " + responseRight.toUpperCase() + 
+				" . " + "</p> <p> We recommend resting your left and right index fingers on these keys.</p>" +
+				" <p> <b>Please respond as quickly and accurately as possible.</b>" +
+				"<p> You can commence the experiment shortly. </p>"
+				},
+			trial_duration: 10000,
+			post_trial_gap: 0
+		};
+		timeline.push(instructions);
+
+
+		var instructions2 = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: function(){
+				return "<p>In this experiment, you will be shown a series of letter strings.</p>" +
+				"<p>You must decide if these strings are English words or not.</p>" +
+				"<p> The stimuli are a mix of common and uncommon words as well as non-words</p>" +
+				"<p>If the string is a <strong>word</strong>, " +
+				"press " + responseLeft.toUpperCase() + " ." +
+				"<p>If the string is a <strong>non-word</strong>, press " + responseRight.toUpperCase() + 
+					" . " + "</p> <p> We recommend resting your left and right index fingers on these keys.</p>" +
+					" <p> <b>Please respond as quickly and accurately as possible.</b>" +
+				"<p><b>Press the space bar to begin.</b></p>"},
+			post_trial_gap: 1000
+		};
+		timeline.push(instructions2);
+
+
+		var test_stimuli = [{ stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GAEN</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight} } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">MUDDEN</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">FAINDY</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BOYALTY</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">NALRET</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SUILT</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">PURTIND</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">FOLLING</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LEYTER</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">TLATA</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">KORG</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">TIBOE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SINGREM</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CROTH</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SOTY</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">NELATED</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">JERD</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">INLECT</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DERB</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CIPA</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">TESAL</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">RACSITY</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">ICIR</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">UNGO</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">TOETH</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LICKLE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">WINKEX</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DEPENT</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">ARCY</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">STEEG</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">MISHT</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BETHA</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">STATLE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">HUER</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">YORSE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">ANSU</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CONFISE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BECTIST</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GUNDAGE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GENLIC</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LIDGER</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DOLU</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">MENOY</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CEOT</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GEWD</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">ROQUESH</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">MALVIC</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BEKE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CURNING</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SNEYL</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DILADA</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DOURSE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">HANDASE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SHRUM</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CHOVE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">TAOT</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BITTOD</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">FLUBS</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SAXUS</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">REFATE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">ETEA</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CHERK</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LERY</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">NEEN</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">VOLDER</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">ALAVE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">HUNNING</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">HEABING</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">HUTE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SUSTORD</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">MULD</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">PREDUCI</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">PUNREC</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DEAFOM</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">QUINS</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">POAK</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BRARE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LUNES</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">HEUCH</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">WIRSH</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">RIACH</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">FOWLD</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">YEPE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">HETAIL</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">OTHES</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DAGER</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SALIC</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">OVEL</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CHIER</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SOLLER</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SUINE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">FLOAD</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">RANNOT</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">TIAM</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">RELAD</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DOUT</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SOGO</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">RATKER</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BULTON</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CATU</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">KURRY</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">MINNI</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">WEATER</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">ULVEW</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">POSSAGE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">MAGOP</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SEFORC</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">VEYTOV</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GEIF</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SARL</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">HESRING</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DOFUND</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LOLDER</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">COIRT</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">WODO</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">NENOUND</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">VONY</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GASHER</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">PRINOTE</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">HATRY</div>', data: {test_part: 'test', cond: 'NW', correct_response: function(){return responseRight}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">RECANT</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">ROSTER</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">ACNE</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GAGGLE</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SUET</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">JIGGLE</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SWORN</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SIMILE</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GRIPE</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">EMERY</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DUFF</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GNAT</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SERF</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BLIP</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DUCKY</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SLED</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BINGE</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">AGLOW</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LESION</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LEANING</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GARBLE</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">RUFF</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">EQUABLY</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SCOOT</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LAMELY</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">INGEST</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DAMPER</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DIGNIFY</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">YULE</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">TIMER</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LEADED</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BINDER</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CINCH</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BADNESS</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SERVILE</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LEWD</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">PRANK</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">PILLAGE</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">METTLE</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LOYALLY</div>', data: {test_part: 'test', cond: 'VLF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">RESERVE</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">JOLT</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BAIT</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">WHIG</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">PAINTER</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CONCEPT</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LOVELY</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BARRIER</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BADLY</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BOMB</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GUILT</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GUEST</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">HUSTLE</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">METAL</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">NUDGE</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CREAM</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">WRIST</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LOUD</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CHAIN</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">HAMPER</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BORROW</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LEATHER</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">NURSE</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">ITCH</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SQUIRT</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">TWIN</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BABBLE</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">WITNESS</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DIET</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LOOSE</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">AUNT</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">TENSION</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">PEDAL</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LEADING</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DUKE</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">ATTACH</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">WRAP</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CUFF</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CLOG</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">HEALTHY</div>', data: {test_part: 'test', cond: 'LF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">PLAN</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">STRONG</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">AWARE</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SPEED</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">AMONG</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">TRADE</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">LIVING</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">FILM</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">WEIGHT</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">PROJECT</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BLACK</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GROUND</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">RISK</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">WORLD</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">PRESS</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">TURN</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SPEAK</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CONCERN</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">NEVER</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GIRL</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">GROW</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SIMPLY</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">DREAM</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">OPEN</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">VALUE</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">FORMER</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">NORMAL</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SORRY</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">CERTAIN</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">NECK</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">PROTECT</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">VERY</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">HEALTH</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">BELIEVE</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">SUIT</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">WITH</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">TREE</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">FOLLOW</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">MANY</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } }, { stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p><div style="font-size:30px;">MARKET</div>', data: {test_part: 'test', cond: 'HF', correct_response: function(){return responseLeft}  } } ];
+		
+		
+		
+		var prac_stimuli = [
+			{ stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p> <div style="font-size:30px;">BLURB</div>', data: { test_part: 'practice', cond: 'W', correct_response: function(){return responseLeft} } },
+			{ stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p> <div style="font-size:30px;">BLOOPS</div>' , data: { test_part: 'practice', cond: 'NW',correct_response: function(){return responseRight} } },
+			{ stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p> <div style="font-size:30px;">SHAPE</div>', data: { test_part: 'practice', cond: 'W', correct_response: function(){return responseLeft} } },
+			{ stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p> <div style="font-size:30px;">WASEN</div>', data: { test_part: 'practice', cond: 'NW',correct_response: function(){return responseRight} } },
+			{ stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p> <div style="font-size:30px;">FOLK</div>', data: { test_part: 'practice', cond: 'W', correct_response: function(){return responseLeft} } } ,
+			{ stimulus: '<p> &emsp; </p> <p> &emsp; </p> <p> &emsp; </p> <div style="font-size:30px;">GRET</div>', data: { test_part: 'practice', cond: 'NW',correct_response: function(){return responseRight} } }   
+		];
+		
+		
+		var prac_instructions = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: "<p>This is the practice block. " +
+				"</p><p> In this block, you have a chance to prepare for the experiment.<p>" +
+				"<p> There are  " + prac_stimuli.length + " practice trials </p>" +
+				"<p>Press space bar to begin.</p>",
+			post_trial_gap: 2000
+		};
+		timeline.push(prac_instructions);
+		
+		
+				
+		
+
+
+		function splitRandom(data, n) {
+		  var seen = [];
+		  var counter = 0;
+		
+		  var shuffle = data.reduce(function(r, e) {
+		    function random() {
+		      var rand = parseInt(Math.random(0, test_stimuli.length) * test_stimuli.length);
+		      if (seen.indexOf(rand) != -1) {
+		        return random()
+		      } else {
+		        seen.push(rand)
+		        return rand;
+		      }
+		    }
+		
+		    r[random()] = e;
+		    return r;
+		  }, [])
+		
+		  var split = shuffle.reduce(function(r, e) {
+		    var c = counter++;
+		    r[c] = r[c].concat(e)
+		    counter = counter % n;
+		    return r;
+		  }, Array(n).fill([]))
+		
+		  return split;
+		}
+		
+		var test_stim = splitRandom(test_stimuli,nblocks);
+		
+		
+		
+		
+		var fixation_prac = {
+			type: 'html-keyboard-response',
+			stimulus: '<div style="font-size:60px;">+</div>',
+			choices: jsPsych.NO_KEYS,
+			trial_duration: function () {
+				return jsPsych.randomization.sampleWithoutReplacement([250, 500, 750, 1000, 1250, 1500, 1750, 2000], 1)[0];
+			},
+			data: { test_part: 'practice' }
+		};
+		
+		var test_prac = {
+			type: 'html-keyboard-response',
+			stimulus: jsPsych.timelineVariable('stimulus'),
+			prompt: function(){
+					return "<p> &emsp; </p>"+
+					"<p> &emsp; </p>"+
+					"<p> &emsp; </p>"+
+					"<p>Word = <strong>Press " + responseLeft.toUpperCase() + " </strong>  &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp;  Non-word = <strong>Press " + responseRight.toUpperCase() + " </strong> </p>"},
+			choices:function(){ return [responseLeft, responseRight]},
+			data: jsPsych.timelineVariable('data'),
+			on_finish: function (data){
+				data.test_part = "practice";
+				if (data.response == data.correct_response){
+					data.correct = 1
+				} else {
+					data.correct = 0 
+					}
+				},
+			post_trial_gap: 0
+
+		};
+		
+		var feedback_prac = {
+		type: "html-keyboard-response",
+		data: {test_part: "feedback"},
+		choices: [' '],
+		stimulus: function(){
+			var last_trial = jsPsych.data.get().last(1).values()[0].correct;
+			if (last_trial == 1){
+				return "<b> Correct! </b>" +
+						"<p> Press space bar to continue</p>" 
+				
+			} else{
+				return "<p><b> Incorrect!</b>" +
+						"</p><p> Remember to press <b>" + responseLeft.toUpperCase() + "</b> if the string is a word" +
+				" or <b> " + responseRight.toUpperCase() + "</b> for non-words." +
+						"</p><p> Press space to continue</p>" 
+				}
+			}
+		};
+		
+		var practice = {
+				timeline: [fixation_prac, test_prac, feedback_prac],
+				timeline_variables: prac_stimuli,
+				repetitions: 1,
+				randomize_order: true
+		};
+		timeline.push(practice);
+		
+		
+		var start_experiment = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: " <p>You are now ready to start the experiment!" +
+						"</p><p> If you respond too slow, the trial will stop. </p>" +
+						"</p><p> If you respond too fast, you will be warned. </p>" +
+						"</p><p> You will be given feedback on each trial. </p>" +
+						"</p><p> Press space bar to continue</p>"
+		}
+		timeline.push(start_experiment);
+		
+		var fixation = {
+			type: 'html-keyboard-response',
+			stimulus: '<div style="font-size:60px;">+</div>',
+			choices: jsPsych.NO_KEYS,
+			trial_duration: function () {
+				return jsPsych.randomization.sampleWithoutReplacement([250, 500, 750, 1000, 1250, 1500, 1750, 2000], 1)[0];
+			},
+			data: { test_part: 'fixation' }
+		};
+
+		var test = {
+			type: 'html-keyboard-response',
+			stimulus: jsPsych.timelineVariable('stimulus'),
+			prompt: function(){
+				return "<p> &emsp; </p>"+
+					"<p> &emsp; </p>"+
+					"<p> &emsp; </p>"+
+			"<p>Word = <strong>Press " + responseLeft.toUpperCase() + " </strong>  &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp;  Non-word = <strong>Press " + responseRight.toUpperCase() + " </strong> </p>"},
+			choices: function(){return[responseLeft, responseRight]},
+			data: jsPsych.timelineVariable('data'),
+			on_finish: function (data){
+				data.test_part = "test"
+				if (online==true){
+				data.subject = username;
+				data.task = currentTask;
+				}
+				if (data.response == data.correct_response){
+					data.correct = 1
+				} else {
+					data.correct = 0 
+					}
+				},
+			post_trial_gap: 0,
+			trial_duration: timeout
+		};
+		
+		
+		var feedback = {
+			type: "html-keyboard-response",
+			data: {test_part: "feedback"},
+			choices: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return [' ']
+				}else if (last_trial < tooFast){
+					return [' ']
+				} else {
+					return jsPsych.NO_KEYS
+					} 
+				},
+			stimulus: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return "<p><b> Too slow!</b> </p><p> Press space bar to continue</p> "
+				} else if (last_trial < tooFast){
+					return "<p><b> Too fast!</b> </p><p> Press space bar to continue</p> "
+				} else {
+					var last_acc = jsPsych.data.get().last(1).values()[0].correct;
+					if (last_acc == 1){
+						return "<b> Correct! </b>" 
+					} else{
+						return "<b> Incorrect!</b>" 
+					}
+				} 
+			},
+			trial_duration: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return 100000
+				}else if (last_trial < tooFast){
+					return 100000
+				} else{
+					return postTrialGap
+					}
+				},
+				on_finish: function (data){
+				if (online==true){
+					data.subject = username;
+					data.task = currentTask;
+					}
+				}
+			};
+	
+		var i;
+		for (i = 0; i < nblocks; i++) {
+			var start_block = {
+			type: "html-keyboard-response",
+			stimulus: "<p> This block has " + test_stim[i].length + " trials. </p>" +
+						"<p> Press space bar to continue</p>",
+			choices: [' '],
+			data: { test_part: 'start block' }
+		};
+		
+		var test_procedure = {
+				timeline: [fixation, test, feedback],
+				timeline_variables: test_stim[i],
+				repetitions: 1,
+				randomize_order: false
+			};
+		
+		
+		var end_block = {
+			type: "html-keyboard-response",
+			stimulus: "This is the end of the block. Press space bar to continue",
+			choices: [' '],
+			data: { test_part: 'end block' }
+
+		};
+		
+		var test_blocks = {
+			timeline: [start_block, test_procedure, end_block],
+			randomize_order: false
+		}
+		timeline.push(test_blocks);
+		};
+	
+		
+
+		// var result = {
+   		//  type: 'call-function',
+   		//  func: function() {
+		// 	var resultJson = jsPsych.data.get().csv();
+		// 	jatos.submitResultData(resultJson)
+		// 	}
+		// }
+		// timeline.push(result);
+		
+		/* define debrief */
+		var debrief_block = {
+ 			type: "html-keyboard-response",
+ 			choices: [' '],
+ 			stimulus: function () {
+ 		 		return "<p>You have now completed the experiment.  </p> " +
+ 						"<p><b> Please press the space bar to finalise results and return to Prolific.</b></p>"+
+				 		"<p> Thank you!</p>"}
+ 		};
+ 		timeline.push(debrief_block);
+
+
+
+
+		/* start the experiment */
+	/* start the experiment */
+		//jatos.onLoad(function() {
+		// 	if (online){
+		// 		username = jatos.urlQueryParameters.PROLIFIC_PID;
+		// 		var currentStudy = jatos.urlQueryParameters.STUDY_ID;
+		// 		currentTask = jatos.urlQueryParameters.TASK_ID;
+
+		// }
+		jsPsych.init({
+ 			timeline: timeline,
+  			//on_finish: function() {
+       	//if (online){
+		//	   var endLink = "https://app.prolific.co/submissions/complete?cc=" + currentStudy;
+		//			jatos.endStudyAndRedirect(endLink);	   
+		  // } else{
+       		//jatos.endStudy();
+		//}
+});
+
+	</script>
+</body>
+
+
+</html>

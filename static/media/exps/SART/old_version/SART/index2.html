@@ -1,0 +1,383 @@
+<!doctype html>
+<!-- Example taken from http://www.jspsych.org/tutorials/rt-task/ and adapted for the use with JATOS -->
+<html>
+
+<head>
+    <title> SART </title>
+    <!-- If you use an older version of JATOS (< 3.3.1) you have to use absolutes path for you assets and jatos.js-->
+    <script src="jspsych-6.3.0/jspsych.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-image-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-button-response.js"></script>    
+    <script src="jspsych-6.3.0/plugins/jspsych-fullscreen.js"></script>
+ 	 <script src="jspsych-6.3.0/plugins/jspsych-animation.js"></script>
+    <script src="jatos.js"></script>
+    <link href="jspsych-6.3.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+</head>
+
+<body>
+</body>
+<script>
+    /* create timeline */
+    var timeline = [];
+    var stim_duration = 250;
+    var fix_duration = 250;
+    var response_button = 'f';
+	var online = false;
+	var username; 
+
+
+	timeline.push({
+ 		 type: 'fullscreen',
+ 		 fullscreen_mode: true
+		});
+		
+    /* define welcome message trial */
+    if (online){
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin.",
+			data: { username: username }
+		};
+		}else{
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin."
+		};
+		}
+    timeline.push(welcome);
+
+	var buttonGo = {
+			type: "image-keyboard-response",
+			post_trial_gap: 1000,
+			stimulus: 'img/keyboard-go.png',
+			prompt: "<br>"+
+					"<br>"+"Please press this button.",
+			on_finish: function(data){
+				response_button = data.response
+			}
+		};
+		
+		
+		
+		var correctButtons = {
+			type: "html-button-response",
+			choices: ['Yes', 'No'],
+			post_trial_gap: 1000,
+			stimulus: function(){
+			return "<p> The response button is <strong>" + response_button.toUpperCase() + "</strong></p>" +
+			"<p> Is this correct? </p>"
+			},
+			on_finish: function(data){
+				goodButtons =  data.response
+			}
+		};		
+		
+		
+		var buttons = {
+			timeline: [ buttonGo, correctButtons],
+			loop_function: function(){
+				key_response = goodButtons;
+     	 		if(key_response == 1){
+       			 return true;
+      			} else {
+        		return false;
+      			}
+    		}
+		}
+		
+		
+  		timeline.push(buttons);
+
+
+    /* define instructions trial */
+    var instructions = {
+        type: "html-keyboard-response",
+        choices: [" "],
+        stimulus: function(){ 
+        	return "<p>In this experiment, a circle will appear in the center " +
+            "of the screen.</p><p>If the circle is <strong>blue</strong>, " +
+            "press the " + response_button.toUpperCase() + " on the keyboard as fast as you can.</p>" +
+            "<p>Press any key to begin.</p>"},
+        post_trial_gap: 2000,
+        data: {
+                test_part: 'instr',
+            }
+    };
+    timeline.push(instructions);
+
+	/* practice trials */
+	
+	var prac_stimuli = [{
+            stimulus: "prac/1.png",
+            data: {
+                test_part: 'prac',
+            }
+        },
+        {
+            stimulus: "prac/2.png",
+            data: {
+                test_part: 'prac',
+            }
+        },
+        {
+            stimulus: "prac/3.png",
+            data: {
+                test_part: 'no-go_prac',
+            }
+        },
+        {
+            stimulus: "prac/4.png",
+            data: {
+                test_part: 'prac',
+            }
+        },
+        {
+            stimulus: "prac/5.png",
+            data: {
+                test_part: 'prac',
+            }
+        }
+    ];
+
+    var fixationP = {
+			type: 'html-keyboard-response',
+			stimulus: '<div style="font-size:120px;">+</div>',
+			choices:  function(){return [response_button]},
+            trial_duration: fix_duration,       
+            response_ends_trial: false,
+			data: { test_part: 'fixation' }
+		};
+   
+   var prac = {
+        type: "image-keyboard-response",
+        stimulus: jsPsych.timelineVariable('stimulus'),
+        choices: function(){return[response_button]},
+        trial_duration: stim_duration,
+        response_ends_trial: false,
+        data: jsPsych.timelineVariable('data'),
+    }
+   
+    var mask = {
+        type: 'html-keyboard-response',
+        stimulus: " ",
+        choices: function(){
+				if (jsPsych.data.get().last(1).values()[0].rt == null){
+					return [response_button]
+				}else {
+					return jsPsych.NO_KEYS
+					} 
+				},
+        trial_duration: 900,
+        response_ends_trial: false,
+        on_finish: function(data){
+        	data.test_part = "mask"
+            if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(3).values()[0].test_part == "fixation"){
+                data.trial_rt = jsPsych.data.get().last(3).values()[0].rt-fix_duration
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(1).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "prac"){
+                data.trial_rt =  data.rt 
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(1).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "no-go_prac"){
+                data.trial_rt =  data.rt 
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "prac"){
+                data.trial_rt =  data.rt + stim_duration
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(2).values()[0].test_part == "no-go_prac"){
+                data.trial_rt = data.rt + stim_duration
+            }
+            // else {
+            // 	data.trial_rt = jsPsych.data.get().last(2).values()[0].rt
+            // }
+            if (jsPsych.data.get().last(3).values()[0].test_part == "fixation" & jsPsych.data.get().last(3).values()[0].rt > 0 ){
+                data.correct = 2
+            } else if (jsPsych.data.get().last(2).values()[0].test_part == "no-go_prac" & data.trial_rt == null){
+        		data.correct = 1
+        		data.trial = 'no-go_prac'
+        		} else if (jsPsych.data.get().last(2).values()[0].test_part == "no-go_prac" & data.trial_rt > 0){
+        		data.correct = 0
+	       		data.trial = 'no-go_prac'
+    		} else if (jsPsych.data.get().last(2).values()[0].test_part == "prac" & data.trial_rt > 0){
+    			data.correct = 1
+    			data.trial = 'prac'
+    		} else if (jsPsych.data.get().last(2).values()[0].test_part == "prac" & data.trial_rt == null){
+    			data.correct = 0
+    			data.trial = 'prac'
+            }
+            if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(2).values()[0].rt > 0){
+                data.second_rt = jsPsych.data.get().last(2).values()[0].rt
+            } else if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(1).values()[0].rt > 0){
+                data.second_rt = data.rt + stim_duration
+            }
+    	}
+    }
+	
+	var feedback = {
+		type: "html-keyboard-response",
+		data: {test_part: "feedback"},
+		choices: [' '],
+		stimulus: function(){
+			var last_trial = jsPsych.data.get().last(1).values()[0].correct;
+			if (last_trial == 1){
+				return "<b> Correct! </b>" +
+						"<p> Press Space to continue</p>" 
+				
+			} else{
+				return "<b> Incorrect!</b>" +
+                        "</p><p> Remember press the button if it's NOT a 3. </p>" +
+                        "</p><p> DON'T press the button if it's a 3. </p>" +
+                        "</p><p> Wait until the stimulus appears before pressing the button. </p>" +
+						"</p><p> Press Space to continue. </p>" 
+				}
+			}
+		};
+	
+    var prac_procedure = {
+        timeline: [fixationP,prac,mask,feedback],
+        timeline_variables: prac_stimuli,
+        repetitions: 1,
+        randomize_order: true
+    }
+    timeline.push(prac_procedure);
+    
+
+	var start_experiment = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: " <p>You are now ready to start the experiment!" +
+						"</p><p> If you respond too slow, the trial will stop </p>" +
+						"</p><p> If you respond too fast, you will be warned </p>" +
+						"</p><p> Press Space to continue</p>"
+		}
+		timeline.push(start_experiment);
+
+
+
+
+
+	var test_stimuli = [{ stimulus: 'img/1_14_Courier.png', data: {test_part: 'test' } },{ stimulus: 'img/1_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_14_Times.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_Courier.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_15_Times.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_Courier.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_16_Times.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_Courier.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_17_Times.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_Courier.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/1_18_Times.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_Courier.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_14_Times.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_Courier.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_15_Times.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_Courier.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_16_Times.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_Courier.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_17_Times.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_Courier.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_serif.png', data: {test_part: 'test'} },{ stimulus: 'img/2_18_Times.png', data: {test_part: 'test'} },{ stimulus: 'img/3_14_Courier.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_14_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_14_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_14_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_14_Times.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_Courier.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_15_Times.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_Courier.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_16_Times.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_Courier.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_17_Times.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_Courier.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_mono.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_sans.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_serif.png', data: {test_part: 'no-go'} },{ stimulus: 'img/3_18_Times.png', data: {test_part: 'no-go'} },{ stimulus: 'img/4_14_Courier.png', data: {test_part: 'test'} },{ stimulus: 'img/4_14_mono.png', data: {test_part: 'test'} },{ stimulus: 'img/4_14_sans.png', data: {test_part: 'test'} },{ stimulus: 'img/4_14_serif.png', data: {test_part: 'test'} }];   
+   
+    var fixation = {
+			type: 'html-keyboard-response',
+			stimulus: '<div style="font-size:120px;">+</div>',
+			choices:  function(){return [response_button]},
+            trial_duration: fix_duration,       
+            response_ends_trial: false,
+			data: { test_part: 'fixation' }
+		};
+
+   
+    var test = {
+        type: "image-keyboard-response",
+        stimulus: jsPsych.timelineVariable('stimulus'),
+        choices: function(){return [response_button]},
+        trial_duration: stim_duration,
+        response_ends_trial: false,
+        data: jsPsych.timelineVariable('data'),
+    }
+   
+    var mask = {
+        type: 'html-keyboard-response',
+        stimulus: " ",
+        choices: function(){
+				if (jsPsych.data.get().last(1).values()[0].rt == null){
+					return [response_button]
+				}else {
+					return jsPsych.NO_KEYS
+					} 
+				},
+        trial_duration: 900,
+        response_ends_trial: false,
+        on_finish: function(data){
+        	data.test_part = "mask"
+            if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(3).values()[0].test_part == "fixation"){
+                data.trial_rt = jsPsych.data.get().last(3).values()[0].rt-fix_duration
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(1).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "test"){
+                data.trial_rt =  data.rt 
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(1).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "no-go"){
+                data.trial_rt =  data.rt 
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null &  jsPsych.data.get().last(2).values()[0].test_part == "test"){
+                data.trial_rt =  data.rt + stim_duration
+            } else if (jsPsych.data.get().last(2).values()[0].rt == null & jsPsych.data.get().last(2).values()[0].test_part == "no-go"){
+                data.trial_rt = data.rt + stim_duration
+            }
+            // else {
+            // 	data.trial_rt = jsPsych.data.get().last(2).values()[0].rt
+            // }
+            if (jsPsych.data.get().last(3).values()[0].test_part == "fixation" & jsPsych.data.get().last(3).values()[0].rt > 0 ){
+                data.correct = 2
+            } else if (jsPsych.data.get().last(2).values()[0].test_part == "no-go" & data.trial_rt == null){
+        		data.correct = 1
+        		data.trial_type = 'no-go'
+        		} else if (jsPsych.data.get().last(2).values()[0].test_part == "no-go" & data.trial_rt > 0){
+        		data.correct = 0
+	       		data.trial_type = 'no-go'
+    		} else if (jsPsych.data.get().last(2).values()[0].test_part == "test" & data.trial_rt > 0){
+    			data.correct = 1
+    			data.trial_type = 'test'
+    		} else if (jsPsych.data.get().last(2).values()[0].test_part == "test" & data.trial_rt == null){
+    			data.correct = 0
+    			data.trial_type = 'test'
+            }
+            if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(2).values()[0].rt > 0){
+                data.second_rt = jsPsych.data.get().last(2).values()[0].rt
+            } else if (jsPsych.data.get().last(3).values()[0].rt > 0 & jsPsych.data.get().last(1).values()[0].rt > 0){
+                data.second_rt = data.rt + stim_duration
+            }
+    	}
+    }
+
+	
+    var test_procedure = {
+        timeline: [fixation,test,mask],
+        timeline_variables: test_stimuli,
+        repetitions: 1,
+        randomize_order: true
+    }
+    timeline.push(test_procedure);
+    
+    
+
+    /* define debrief */
+
+    var debrief_block = {
+        type: "html-keyboard-response",
+        choices: [' '],
+        stimulus: function () {
+
+            var trials = jsPsych.data.get().filter({ trial_type: 'test' });
+            var no_go = jsPsych.data.get().filter({ trial_type: 'no-go' });
+            var correct_trials = no_go.filter({ correct: true });
+			var accuracy = Math.round(correct_trials.count() / no_go.count() * 100);
+            var masks = jsPsych.data.get().filter({ test_part: 'mask'   });
+            var rt = Math.round(masks.select('trial_rt').mean());
+
+            return "<p>Your average response time was " + rt + "ms.</p>" +
+            "<p> You stopped going on " + accuracy +  "% of the no-go trials.</p>" +
+                "<p>Press the space bar to complete the experiment. Thank you!</p>";
+
+        },
+        data: { test_part: 'debrief'  } };
+    timeline.push(debrief_block);
+
+    /* start the experiment */
+   jatos.onLoad(function() {
+		if (online){
+			username = jatos.urlQueryParameters.param;
+		}
+		jsPsych.init({
+ 			timeline: timeline,
+  			on_finish: function() {
+ 			var resultJson = jsPsych.data.get().csv();
+       	if (online){
+       		jatos.endStudyandRedirect("https://app.prolific.co/submissions/complete?cc="+username, resultJson);
+  			} else{
+       		jatos.submitResultData(resultJson, jatos.endStudy);
+  			}
+  		}
+	});
+});
+</script>
+
+</html>

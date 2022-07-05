@@ -1,0 +1,1456 @@
+<!DOCTYPE html><html lang="en-us" >
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  
+  
+  
+  <meta name="generator" content="Wowchemy 4.8.0 for Hugo">
+  
+
+  
+
+  
+  
+
+  
+  
+  
+  
+  
+    
+    
+    
+  
+  
+
+  <meta name="author" content="Reilly Innes">
+
+  
+  
+  
+    
+  
+  <meta name="description" content="There has been substantial research and debate over the non-decision time parameter of evidence accumulation models. For LBA and diffusion models, there is often a discrepancy, where diffusion models show longer t0 times, with the LBA known to poorly estimate this parameter.">
+
+  
+  <link rel="alternate" hreflang="en-us" href="/post/2021-03-16-t0-estimation/why-does-t0-estimate-well-/">
+
+  
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+
+  
+  
+  
+  <meta name="theme-color" content="#2962ff">
+  
+
+  
+  
+
+  
+  
+  
+  
+    
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css" integrity="sha256-FMvZuGapsJLjouA6k7Eo2lusoAX9i0ShlWFG6qt7SLc=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css" integrity="sha256-Vzbj7sDDS/woiFS3uNKo8eIuni59rjyNGtXfstRzStA=" crossorigin="anonymous">
+
+    
+    
+    
+      
+    
+    
+      
+      
+        
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.0/styles/github.min.css" crossorigin="anonymous" title="hl-light">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.0/styles/dracula.min.css" crossorigin="anonymous" title="hl-dark" disabled>
+        
+      
+    
+
+    
+
+    
+
+    
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.2.2/lazysizes.min.js" integrity="sha512-TmDwFLhg3UA4ZG0Eb4MIyT1O1Mb+Oww5kFG0uHqXsdbyZz9DcvYQhKpGgNkamAI6h2lGGZq2X8ftOJvF/XjTUg==" crossorigin="anonymous" async></script>
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+        
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+      
+
+      
+      
+
+      
+    
+
+  
+
+  
+  
+  
+    
+      
+      
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:400,700%7CRoboto:400,400italic,700%7CRoboto+Mono&display=swap">
+    
+  
+
+  
+  
+  
+  
+  <link rel="stylesheet" href="/css/wowchemy.css">
+
+  
+
+
+
+
+  
+
+
+  
+  
+
+  
+
+  <link rel="manifest" href="/index.webmanifest">
+  <link rel="icon" type="image/png" href="/images/icon_hu1dc3f56a72840a79504e5212c1d5c006_23068_32x32_fill_lanczos_center_3.png">
+  <link rel="apple-touch-icon" type="image/png" href="/images/icon_hu1dc3f56a72840a79504e5212c1d5c006_23068_192x192_fill_lanczos_center_3.png">
+
+  <link rel="canonical" href="/post/2021-03-16-t0-estimation/why-does-t0-estimate-well-/">
+
+  
+  
+  
+  
+  
+  
+  
+    
+    
+  
+  
+  <meta property="twitter:card" content="summary">
+  
+  <meta property="twitter:site" content="@ReillyInnes">
+  <meta property="twitter:creator" content="@ReillyInnes">
+  
+  <meta property="og:site_name" content="Reilly Innes">
+  <meta property="og:url" content="/post/2021-03-16-t0-estimation/why-does-t0-estimate-well-/">
+  <meta property="og:title" content="Why does t0 estimate well in PMwG? | Reilly Innes">
+  <meta property="og:description" content="There has been substantial research and debate over the non-decision time parameter of evidence accumulation models. For LBA and diffusion models, there is often a discrepancy, where diffusion models show longer t0 times, with the LBA known to poorly estimate this parameter."><meta property="og:image" content="/images/icon_hu1dc3f56a72840a79504e5212c1d5c006_23068_512x512_fill_lanczos_center_3.png">
+  <meta property="twitter:image" content="/images/icon_hu1dc3f56a72840a79504e5212c1d5c006_23068_512x512_fill_lanczos_center_3.png"><meta property="og:locale" content="en-us">
+  
+    
+      <meta property="article:published_time" content="2021-03-16T00:00:00&#43;00:00">
+    
+    <meta property="article:modified_time" content="2021-03-16T00:00:00&#43;00:00">
+  
+
+  
+
+
+    
+
+
+
+
+
+
+  
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/post/2021-03-16-t0-estimation/why-does-t0-estimate-well-/"
+  },
+  "headline": "Why does t0 estimate well in PMwG?",
+  
+  "datePublished": "2021-03-16T00:00:00Z",
+  "dateModified": "2021-03-16T00:00:00Z",
+  
+  "author": {
+    "@type": "Person",
+    "name": "Reilly Innes"
+  },
+  
+  "publisher": {
+    "@type": "Organization",
+    "name": "Reilly Innes",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/images/icon_hu1dc3f56a72840a79504e5212c1d5c006_23068_192x192_fill_lanczos_center_3.png"
+    }
+  },
+  "description": "There has been substantial research and debate over the non-decision time parameter of evidence accumulation models. For LBA and diffusion models, there is often a discrepancy, where diffusion models show longer t0 times, with the LBA known to poorly estimate this parameter."
+}
+</script>
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+
+  <title>Why does t0 estimate well in PMwG? | Reilly Innes</title>
+
+</head>
+
+
+<body id="top" data-spy="scroll" data-offset="70" data-target="#TableOfContents" class=" ">
+
+  
+  
+  
+    <script>window.wcDarkLightEnabled = true;</script>
+  
+  
+    <script>const isSiteThemeDark = false;</script>
+  
+  
+  <script src="/js/load-theme.js"></script>
+
+  <aside class="search-results" id="search">
+  <div class="container">
+    <section class="search-header">
+
+      <div class="row no-gutters justify-content-between mb-3">
+        <div class="col-6">
+          <h1>Search</h1>
+        </div>
+        <div class="col-6 col-search-close">
+          <a class="js-search" href="#"><i class="fas fa-times-circle text-muted" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <div id="search-box">
+        
+        <input name="q" id="search-query" placeholder="Search..." autocapitalize="off"
+        autocomplete="off" autocorrect="off" spellcheck="false" type="search" class="form-control">
+        
+      </div>
+
+    </section>
+    <section class="section-search-results">
+
+      <div id="search-hits">
+        
+      </div>
+
+    </section>
+  </div>
+</aside>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+<nav class="navbar navbar-expand-lg navbar-light compensate-for-scrollbar" id="navbar-main">
+  <div class="container">
+
+    
+
+    
+    <button type="button" class="navbar-toggler" data-toggle="collapse"
+            data-target="#navbar-content" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+    <span><i class="fas fa-bars"></i></span>
+    </button>
+    
+
+    
+
+    
+    
+    <div class="navbar-collapse main-menu-item collapse justify-content-start" id="navbar-content">
+
+      
+      <ul class="navbar-nav d-md-inline-flex">
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+
+        
+        
+        
+        
+
+        
+          
+            
+            
+          
+          
+            
+            
+            
+              
+            
+            
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#hero"><span>Home</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+
+        
+        
+        
+        
+
+        
+          
+            
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link  active" href="/post/"><span>Blogs</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+
+        
+        
+        
+        
+
+        
+          
+            
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/publication/"><span>Publications</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+
+        
+        
+        
+        
+
+        
+          
+            
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/talk"><span>Talks and Presentations</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+
+        
+        
+        
+        
+
+        
+          
+            
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/project/"><span>Code</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+            
+          
+        
+
+        
+
+        
+        
+        
+        
+
+        
+          
+            
+            
+          
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="https://osf.io/pf5td/" target="_blank" rel="noopener"><span>OSF</span></a>
+        </li>
+
+        
+        
+
+        
+
+        
+        
+        
+          
+        
+
+        
+
+        
+        
+        
+        
+
+        
+          
+            
+            
+          
+          
+            
+            
+            
+              
+            
+            
+          
+        
+
+        <li class="nav-item">
+          <a class="nav-link " href="/#contact"><span>Contact</span></a>
+        </li>
+
+        
+        
+
+      
+
+        
+      </ul>
+    </div>
+
+    <ul class="nav-icons navbar-nav flex-row ml-auto d-flex pl-md-2">
+      
+      
+      <li class="nav-item">
+        <a class="nav-link js-search" href="#" aria-label="Search"><i class="fas fa-search" aria-hidden="true"></i></a>
+      </li>
+      
+
+      
+      
+
+      
+
+    </ul>
+
+  </div>
+</nav>
+
+
+
+  <article class="article">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  
+  
+<div class="article-container pt-3">
+  <h1>Why does t0 estimate well in PMwG?</h1>
+
+  
+
+  
+    
+
+
+<div class="article-metadata">
+
+  
+  
+
+  
+  <span class="article-date">
+    
+    
+      
+    
+    Mar 16, 2021
+  </span>
+  
+
+  
+
+  
+  <span class="middot-divider"></span>
+  <span class="article-reading-time">
+    6 min read
+  </span>
+  
+
+  
+  
+  
+
+  
+  
+  <span class="middot-divider"></span>
+  <span class="article-categories">
+    <i class="fas fa-folder mr-1"></i><a href="/category/r/">R</a></span>
+  
+
+</div>
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+</div>
+
+
+
+  <div class="article-container">
+
+    <div class="article-style">
+      
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<p>There has been substantial research and debate over the non-decision time parameter of evidence accumulation models. For LBA and diffusion models, there is often a discrepancy, where diffusion models show longer t0 times, with the LBA known to poorly estimate this parameter. Researchers are aware of this, however, the issue is largely ignored. Research into this parameter has used neural measurement data and muscular activity to provide useful estimates of t0 (i.e. the upper and lower limits of the parameter) to give a sense of how accurate this estimation is.</p>
+<p>Recently, following a paper by Gunawan et al., (2020), a new method of Bayesian hierarchical estimation was outlined which shows more reliable parameter estimation. Following several modelling exercises using this method (known as Particle Metropolis within Gibbs - PMwG), it was found that t0 estimates were much improved from previous DE-MCMC sampling methods. “Improved” being that estimates of t0 often centered around 0.01 seconds, whereas in PMwG, this was closer to 0.1 seconds - much more reasonable and in line with literature. So maybe it wasn’t so much a problem with the model, but rather a problem with the model estimation. In this blog post, i explore why this might be.</p>
+<div id="first-parameter-recovery" class="section level2">
+<h2>First, parameter recovery</h2>
+<p>First of all, I’ll make sure this holds in a parameter recovery exercise - after all, we would like to know if the LBA is still doing a not-so-great job of figuring out t0. In this simulation exercise, I show t0 recovering at 3 different values for a single t0 LBA model (i.e. one t0 for all simulated conditions) and 3 lots of t0 values for a three t0 model (i.e. each condition has a t0 value). In the code below, small, medium and large refer to the input t0 parameters (small = fast t0, large = slow t0).</p>
+<div id="single-t0" class="section level3">
+<h3>Single t0</h3>
+<table>
+<caption><span id="tab:singlet0recover">Table 1: </span>Large t0</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">t0</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Actual.t0</td>
+<td align="right">0.2000000</td>
+</tr>
+<tr class="even">
+<td align="left">Recovered</td>
+<td align="right">0.2254268</td>
+</tr>
+</tbody>
+</table>
+<table>
+<caption><span id="tab:singlet0recover">Table 1: </span>Medium t0</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">t0</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Actual.t0</td>
+<td align="right">0.1000000</td>
+</tr>
+<tr class="even">
+<td align="left">Recovered</td>
+<td align="right">0.1715356</td>
+</tr>
+</tbody>
+</table>
+<table>
+<caption><span id="tab:singlet0recover">Table 1: </span>Small t0</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">t0</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Actual.t0</td>
+<td align="right">0.0300000</td>
+</tr>
+<tr class="even">
+<td align="left">Recovered</td>
+<td align="right">0.0836326</td>
+</tr>
+</tbody>
+</table>
+<div id="large" class="section level4">
+<h4>Large</h4>
+<p><img src="staticalphasB-1.png" width="672" /></p>
+</div>
+<div id="medium" class="section level4">
+<h4>Medium</h4>
+<p><img src="staticalphasM-1.png" width="672" /></p>
+<p><img src="staticalphasS-1.png" width="672" /></p>
+</div>
+</div>
+<div id="t0-varies-with-conds" class="section level3">
+<h3>t0 varies with conds</h3>
+<table>
+<caption><span id="tab:doubltt0recover">Table 2: </span>Large t0</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">t0</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Actual.t01</td>
+<td align="right">0.1500000</td>
+</tr>
+<tr class="even">
+<td align="left">Actual.t02</td>
+<td align="right">0.2000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Actual.t03</td>
+<td align="right">0.2500000</td>
+</tr>
+<tr class="even">
+<td align="left">Recovered.t01</td>
+<td align="right">0.1227897</td>
+</tr>
+<tr class="odd">
+<td align="left">Recovered.t02</td>
+<td align="right">0.1991755</td>
+</tr>
+<tr class="even">
+<td align="left">Recovered.t03</td>
+<td align="right">0.1987277</td>
+</tr>
+</tbody>
+</table>
+<table>
+<caption><span id="tab:doubltt0recover">Table 2: </span>Medium t0</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">t0</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Actual.t01</td>
+<td align="right">0.0500000</td>
+</tr>
+<tr class="even">
+<td align="left">Actual.t02</td>
+<td align="right">0.1000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Actual.t03</td>
+<td align="right">0.1500000</td>
+</tr>
+<tr class="even">
+<td align="left">Recovered.t01</td>
+<td align="right">0.0733236</td>
+</tr>
+<tr class="odd">
+<td align="left">Recovered.t02</td>
+<td align="right">0.1138871</td>
+</tr>
+<tr class="even">
+<td align="left">Recovered.t03</td>
+<td align="right">0.1758666</td>
+</tr>
+</tbody>
+</table>
+<table>
+<caption><span id="tab:doubltt0recover">Table 2: </span>Small t0</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">t0</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Actual.t01</td>
+<td align="right">0.0300000</td>
+</tr>
+<tr class="even">
+<td align="left">Actual.t02</td>
+<td align="right">0.0600000</td>
+</tr>
+<tr class="odd">
+<td align="left">Actual.t03</td>
+<td align="right">0.0900000</td>
+</tr>
+<tr class="even">
+<td align="left">Recovered.t01</td>
+<td align="right">0.0507706</td>
+</tr>
+<tr class="odd">
+<td align="left">Recovered.t02</td>
+<td align="right">0.0972373</td>
+</tr>
+<tr class="even">
+<td align="left">Recovered.t03</td>
+<td align="right">0.1111606</td>
+</tr>
+</tbody>
+</table>
+<p>So, it looks like t0 recovers relatively well, but maybe overestimates smaller values. This means that the LBA may still not perfectly estimate actual t0 values, but could also come from the variance in the individual subject synthetic parameters. One thing is for sure though, t0 is recovered at reasonable values compared to old DE-MCMC. So what could help this estimation method?</p>
+<!-- WHY?????? espeically for small values, it actually is bigger???? Check other params -->
+</div>
+</div>
+<div id="log-transform" class="section level2">
+<h2>Log Transform</h2>
+<p>One answer to this question is the log transformation of the parameter vector. This was proposed in Gunawan et al., (2020) so that values drawn from PMwG, which are on the real number line, could be used with the LBA - which requires positive-definite values. Hence, when using the LBA in PMwG, we take the exponent of the proposal parameters to calculate the likelihood - where we return the log of the likelihood.</p>
+<p>Essentially by doing the log transform of the parameters, all particle values are sampled from the real number line. This makes it starightforward to specify their joint distribution as a multivariate normal (with full covariance matrix structure). Previously, we would’ve assumed that the prior joint distribution of the parameters was an uncorrelated, truncated (at zero) univariate normal. In this new approach, with the log transform (which in practice is just taking the exponential of the values on the real line), there are two key advantages; increasing sampling efficiency (sampling from the real line) and using more informed prior knowledge. further, previous methods could lead to overconfidence in the precision of estimation, and underestimation of the magnitide of individual differences - which could be key in estimating t0. With the covariance matrix able to be estimated, this links to the next section, but also, the log transform is necessary to better estimate this structure.</p>
+<p>To test the log transform, I use the Forstmann et al., (2008) dataset reported in Gunawan et al., (2020) for a 3 threshold LBA. Using the PMwG sampler, I fit the model twice, using varying likelihood functions - one which takes the exponent of the proposed values and one which returns bad likelihoods for proposed values below 0 - i.e. method one is the log transformed way, method two is the untransformed (but protected against negative values) way.</p>
+<p>The results are shown below.</p>
+<table>
+<caption><span id="tab:thetaExpLogComparison">Table 3: </span>t0 estimated values on the exponential scale (normal way) and on the real number line (logged)</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">t0</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Log Transformed</td>
+<td align="right">0.1207189</td>
+</tr>
+<tr class="even">
+<td align="left">Truncated values</td>
+<td align="right">0.1004302</td>
+</tr>
+</tbody>
+</table>
+<div id="alpha-values" class="section level3">
+<h3>alpha values</h3>
+<p><img src="staticalphaExpLogComparison-1.png" width="672" /></p>
+</div>
+</div>
+<div id="covariance-matrix" class="section level2">
+<h2>covariance matrix</h2>
+<p>In this section, I investigate whether the covariance matrix could be a main cause for better estimates of t0. As mentioned earlier, PMwG samples from the real line, making it easy to specify the parameters (particles) distribution as an unconstrained multivariate normal distribution with full covariance structure. Using the particle approach has an advantage over other MCMC methods as we can jointly estimate the density of parameters, which enables the covariance matrix to be informed, which then constrains proposed particles.</p>
+<p>To test whether the covariance matrix is a main cause for more accurate t0 estimation, I again ran the above model of the Forstmann et al., (2008) data set (with the log transform) over two different iterations. The first iteration ran PMwG as the R package defaults too. In the second iteration, I changed the v-half parameter, which is the hyperparameter on Σ prior (Half-t degrees of freedom). We tend to use v-half = 1. But to constrain the covariance matrix, I set v-half to 1000, essentially rendering the matrix useless.</p>
+<p>The following shows the results of this change.</p>
+<table>
+<caption><span id="tab:vHalf">Table 4: </span>t0 estimated with and without the covariance structure (using a high v-half)</caption>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">t0</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Exponential with Covariance</td>
+<td align="right">0.1207189</td>
+</tr>
+<tr class="even">
+<td align="left">Without Covariance</td>
+<td align="right">0.1058109</td>
+</tr>
+</tbody>
+</table>
+<div id="alpha-values-1" class="section level3">
+<h3>alpha values</h3>
+<p><img src="staticalphaVhalfComparison-1.png" width="672" /></p>
+<p>Evidently, removing the restraint from the covariance matrix leads to less reliable sampling and worse t0 estimates. Evidently, it is not directly one reason that t0 estimates more reliably in PMwG, but a combination of things.</p>
+</div>
+</div>
+<div id="a-comment-on-hierarchical-shrinkage" class="section level2">
+<h2>a comment on hierarchical shrinkage</h2>
+<p>Evidently, although the sampler does a good job in recovering most values of t0, we still see some hierarchical shrinkage, especially with larger t0 values. This is to be expected with hierarchical Bayesian sampling models, however, should still be considered when reporting results.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Forstmann, B. U., Dutilh, G., Brown, S., Neumann, J., Von Cramon, D. Y., Ridderinkhof, K. R., &amp; Wagenmakers, E. J. (2008). Striatum and pre-SMA facilitate decision-making under time pressure. <em>Proceedings of the National Academy of Sciences, 105(45)</em>, 17538-17542.</p>
+<p>Gunawan, D., Hawkins, G. E., Tran, M. N., Kohn, R., &amp; Brown, S. D. (2020). New estimation approaches for the hierarchical Linear Ballistic Accumulator model. <em>Journal of Mathematical Psychology, 96</em>, 102368.</p>
+</div>
+
+    </div>
+
+    
+
+
+
+
+
+
+<div class="article-tags">
+  
+  <a class="badge badge-light" href="/tag/pmwg/">pmwg</a>
+  
+  <a class="badge badge-light" href="/tag/modelling/">modelling</a>
+  
+</div>
+
+
+
+<div class="share-box" aria-hidden="true">
+  <ul class="share">
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://twitter.com/intent/tweet?url=/post/2021-03-16-t0-estimation/why-does-t0-estimate-well-/&amp;text=Why%20does%20t0%20estimate%20well%20in%20PMwG?" target="_blank" rel="noopener" class="share-btn-twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.facebook.com/sharer.php?u=/post/2021-03-16-t0-estimation/why-does-t0-estimate-well-/&amp;t=Why%20does%20t0%20estimate%20well%20in%20PMwG?" target="_blank" rel="noopener" class="share-btn-facebook">
+          <i class="fab fa-facebook"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="mailto:?subject=Why%20does%20t0%20estimate%20well%20in%20PMwG?&amp;body=/post/2021-03-16-t0-estimation/why-does-t0-estimate-well-/" target="_blank" rel="noopener" class="share-btn-email">
+          <i class="fas fa-envelope"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://www.linkedin.com/shareArticle?url=/post/2021-03-16-t0-estimation/why-does-t0-estimate-well-/&amp;title=Why%20does%20t0%20estimate%20well%20in%20PMwG?" target="_blank" rel="noopener" class="share-btn-linkedin">
+          <i class="fab fa-linkedin-in"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="whatsapp://send?text=Why%20does%20t0%20estimate%20well%20in%20PMwG?%20/post/2021-03-16-t0-estimation/why-does-t0-estimate-well-/" target="_blank" rel="noopener" class="share-btn-whatsapp">
+          <i class="fab fa-whatsapp"></i>
+        </a>
+      </li>
+    
+      
+      
+      
+        
+      
+      
+      
+      <li>
+        <a href="https://service.weibo.com/share/share.php?url=/post/2021-03-16-t0-estimation/why-does-t0-estimate-well-/&amp;title=Why%20does%20t0%20estimate%20well%20in%20PMwG?" target="_blank" rel="noopener" class="share-btn-weibo">
+          <i class="fab fa-weibo"></i>
+        </a>
+      </li>
+    
+  </ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+  
+  
+  
+    
+  
+  
+  
+  <div class="media author-card content-widget-hr">
+    
+      
+      <a href="/"><img class="avatar mr-3 avatar-circle" src="/author/reilly-innes/avatar_hu5a4b20d3b4a6508f81c0d01ccc13c00b_4623_270x270_fill_q90_lanczos_center.jpg" alt="Reilly Innes"></a>
+    
+
+    <div class="media-body">
+      <h5 class="card-title"><a href="/">Reilly Innes</a></h5>
+      <h6 class="card-subtitle">Post Doc Researcher</h6>
+      <p class="card-text">Researching cognitive workload, computational modelling and decision making.</p>
+      <ul class="network-icon" aria-hidden="true">
+  
+    
+    
+    
+      
+    
+    
+    
+    
+    
+    <li>
+      <a href="mailto:reilly.innes@uon.edu.au" >
+        <i class="fas fa-envelope"></i>
+      </a>
+    </li>
+  
+    
+    
+    
+      
+    
+    
+    
+    
+    
+      
+    
+    <li>
+      <a href="https://twitter.com/ReillyInnes" target="_blank" rel="noopener">
+        <i class="fab fa-twitter"></i>
+      </a>
+    </li>
+  
+    
+    
+    
+      
+    
+    
+    
+    
+    
+      
+    
+    <li>
+      <a href="https://scholar.google.com.au/citations?user=navDatAAAAAJ&amp;hl=en&amp;oi=ao" target="_blank" rel="noopener">
+        <i class="fas fa-graduation-cap"></i>
+      </a>
+    </li>
+  
+    
+    
+    
+      
+    
+    
+    
+    
+    
+      
+    
+    <li>
+      <a href="https://github.com/NewcastleCL" target="_blank" rel="noopener">
+        <i class="fab fa-github"></i>
+      </a>
+    </li>
+  
+    
+    
+    
+      
+    
+    
+    
+    
+    
+      
+    
+    <li>
+      <a href="https://www.linkedin.com/in/reilly-innes-638188b6/" target="_blank" rel="noopener">
+        <i class="fab fa-linkedin"></i>
+      </a>
+    </li>
+  
+</ul>
+
+    </div>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+</article>
+
+      
+
+    
+    
+    
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/4.1.4/imagesloaded.pkgd.min.js" integrity="sha256-lqvxZrPLtfffUl2G/e7szqSvPBILGbwmsGE1MKlOi0Q=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.6/isotope.pkgd.min.js" integrity="sha256-CBrpuqrMhXwcLLUd5tvQ4euBHCdh7wGlDfNz8vbu/iI=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/instant.page/5.1.0/instantpage.min.js" integrity="sha512-1+qUtKoh9XZW7j+6LhRMAyOrgSQKenQ4mluTR+cvxXjP1Z54RxZuzstR/H9kgPXQsVB8IW7DMDFUJpzLjvhGSQ==" crossorigin="anonymous"></script>
+
+      
+
+      
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.0/highlight.min.js" integrity="sha512-TDKKr+IvoqZnPzc3l35hdjpHD0m+b2EC2SrLEgKDRWpxf2rFCxemkgvJ5kfU48ip+Y+m2XVKyOCD85ybtlZDmw==" crossorigin="anonymous"></script>
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.0/languages/r.min.js"></script>
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.2.0/languages/latex.min.js"></script>
+        
+      
+
+    
+
+    
+    
+
+    
+    
+    <script>const code_highlighting = true;</script>
+    
+
+    
+    
+    
+    
+    
+    
+    <script>
+      const search_config = {"indexURI":"/index.json","minLength":1,"threshold":0.3};
+      const i18n = {"no_results":"No results found","placeholder":"Search...","results":"results found"};
+      const content_type = {
+        'post': "Posts",
+        'project': "Projects",
+        'publication' : "Publications",
+        'talk' : "Talks",
+        'slides' : "Slides"
+        };
+    </script>
+    
+
+    
+    
+
+    
+    
+    <script id="search-hit-fuse-template" type="text/x-template">
+      <div class="search-hit" id="summary-{{key}}">
+      <div class="search-hit-content">
+        <div class="search-hit-name">
+          <a href="{{relpermalink}}">{{title}}</a>
+          <div class="article-metadata search-hit-type">{{type}}</div>
+          <p class="search-hit-description">{{snippet}}</p>
+        </div>
+      </div>
+      </div>
+    </script>
+    
+
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/3.2.1/fuse.min.js" integrity="sha256-VzgmKYmhsGNNN4Ph1kMW+BjoYJM2jV5i4IlFoeZA9XI=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha256-4HLtjeVgH0eIB3aZ9mLYF6E8oU5chNdjU6p6rrXpl9U=" crossorigin="anonymous"></script>
+    
+
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      
+    
+    
+    
+    
+    <script src="/js/wowchemy.min.cd29c13e3da221a8d10c6eec88b953cb.js"></script>
+
+    
+
+
+
+
+
+
+  
+  
+  <div class="container">
+    <footer class="site-footer">
+  
+
+  <p class="powered-by">
+    
+  </p>
+
+  
+  
+
+
+
+
+
+
+  <p class="powered-by">
+    
+    Published with
+    <a href="https://wowchemy.com" target="_blank" rel="noopener">Wowchemy</a>  —
+    the free, <a href="https://github.com/wowchemy/wowchemy-hugo-modules" target="_blank" rel="noopener">
+    open source</a> website builder that empowers creators.
+    
+
+    
+    <span class="float-right" aria-hidden="true">
+      <a href="#" class="back-to-top">
+        <span class="button_icon">
+          <i class="fas fa-chevron-up fa-2x"></i>
+        </span>
+      </a>
+    </span>
+    
+  </p>
+</footer>
+
+  </div>
+  
+
+  
+<div id="modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cite</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <pre><code class="tex hljs"></code></pre>
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-outline-primary my-1 js-copy-cite" href="#" target="_blank">
+          <i class="fas fa-copy"></i> Copy
+        </a>
+        <a class="btn btn-outline-primary my-1 js-download-cite" href="#" target="_blank">
+          <i class="fas fa-download"></i> Download
+        </a>
+        <div id="modal-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

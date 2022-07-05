@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Nathan Evans | Reilly Innes</title>
+    <link>/author/nathan-evans/</link>
+      <atom:link href="/author/nathan-evans/index.xml" rel="self" type="application/rss+xml" />
+    <description>Nathan Evans</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Tue, 04 Aug 2020 00:00:00 +0000</lastBuildDate>
+    <image>
+      <url>/images/icon_hu1dc3f56a72840a79504e5212c1d5c006_23068_512x512_fill_lanczos_center_3.png</url>
+      <title>Nathan Evans</title>
+      <link>/author/nathan-evans/</link>
+    </image>
+    
+    <item>
+      <title>A Broader Application of the Detection Response Task to Cognitive Tasks and Online Environments.</title>
+      <link>/publication/innesbroad2020/</link>
+      <pubDate>Tue, 04 Aug 2020 00:00:00 +0000</pubDate>
+      <guid>/publication/innesbroad2020/</guid>
+      <description>&lt;p&gt;Supplementary material can be found &lt;a href=&#34;https://osf.io/dc39s/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>How is multi-tasking different from increased difficulty?</title>
+      <link>/publication/howard2020/</link>
+      <pubDate>Fri, 01 May 2020 00:00:00 +0000</pubDate>
+      <guid>/publication/howard2020/</guid>
+      <description>&lt;p&gt;Supplementary material can be found &lt;a href=&#34;https://osf.io/eb5ap/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

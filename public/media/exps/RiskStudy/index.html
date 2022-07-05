@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<title>Simple Reaction Time [jsPsych]</title>
+	<meta charset="UTF-8">
+	<script src="jspsych-6.3.0/jspsych.js"></script>
+	<script src="jspsych-6.3.0/plugins/jspsych-call-function.js"></script>    
+    <script src="jspsych-6.3.0/plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-button-response.js"></script>    
+    <script src="jspsych-6.3.0/plugins/jspsych-image-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-preload.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+	<script src=//cdnjs.cloudflare.com/ajax/libs/seedrandom/2.3.10/seedrandom.min.js> </script> 
+    <script src="jspsych-6.3.0/plugins/jspsych-fullscreen.js"></script>
+      <link href="jspsych-6.3.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+
+
+	
+</head>
+
+<body>
+	<script type='text/javascript'>
+	
+	
+	/* Script created by Reilly Innes (2021) for a 2 alternate forced choice task (decision making RT task) 
+	based on code provided on jspsych for simple choice rt experiment. The code takes images from the /img folder,
+	shows them on screen (randomly) and asks for participants to make a response. All variables and RTs are recorded in a csv file. 
+	Currently the script is set up to output to JATOS. 
+	In the script, there is first a welcome and instructions, then a practice block, then nblocks of testing and then a debrief block. 
+	
+	To include your own stimulus, delete all images from /img directory and paste your images there. 
+	Next take the R script to format the names of the images to stimuli. In this script, be sure to set correct responses. 
+	In the code, you can change any text to include instructions. 
+	A practice block with feedback is also included here. To change the length of the practice block, change the stimuli included. 
+	To set the number of blocks, change the nblocks variable.
+	To change the response keys (currently set as F and J), change the responseLeft and responseRight variables.
+	Note that these variables are also called for the correct responses to stimuli.
+	To use the same stimulus multiple times, you will have to change the code (and use jspsych repetitions functionality)
+	Alternatively, you can include repeats of the stimuli in the image folder, but this is randomised.
+	To include a set block order, make subfolders in /img and then make your test_stim into n arrays pulled from each subfolder (i.e. block 1 would be img/block1/ -> test_stim[1])
+	You can also add a post trial gap by adding in this variable in the test_procedure timeline after test.
+	You can change the fixation time in fixation; trial_duration. 
+	The practice block will run for as many trials as there are prac_stimuli (randomly showing these)
+	
+	For more details, contact reilly.innes@uon.edu.au. To cite this work use the citation;
+	
+	*/
+	
+	
+	
+	
+		
+		/* create timeline */
+		var timeline = [];
+		var nblocks = 2;
+		var timeout = 10000;	
+		var tooFast = 200;
+		var postTrialGap = 500;
+		var responseLeft = 'z';
+		var responseRight = '/';
+		var goodButtons;
+		var online = true;
+		var username; 
+		var currentTask;
+		if (online == true){
+			// username = jatos.urlQueryParameters.PROLIFIC_PID
+			// console.log(username)
+		}else{
+			var username;
+		}
+		
+		var preload = {
+   			 type: 'preload',
+  			  auto_preload: true 
+		}
+		timeline.push(preload)
+		timeline.push({
+ 		 type: 'fullscreen',
+ 		 fullscreen_mode: true
+		});
+
+		
+
+		/* define welcome message trial */
+		if (online){
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin.",
+			data: { subject: username }
+		};
+		}else{
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin."
+		};
+		}
+		timeline.push(welcome);
+
+		
+		
+		var buttonRight = {
+			type: "image-keyboard-response",
+			post_trial_gap: 1000,
+			stimulus: 'setup/keyboard-right.png',
+			prompt: "<br>"+
+					"<br>"+"Please press this right button.",
+			on_finish: function(data){
+				responseRight = data.response
+			}
+		};
+		
+		var buttonLeft = {
+			type: "image-keyboard-response",
+			post_trial_gap: 1000,
+			stimulus: 'setup/keyboard-left.png',
+			prompt: "<br>"+
+					"<br>"+"Please press this left button.",
+			on_finish: function(data){
+				responseLeft = data.response
+			}
+		};
+		
+		
+		var correctButtons = {
+			type: "html-button-response",
+			choices: ['Yes', 'No'],
+			post_trial_gap: 1000,
+			stimulus: function(){
+			return "<p> The left response button is <strong>" + responseLeft.toUpperCase() + "</strong> and the right response button is <strong>" + responseRight.toUpperCase() + " </strong>. </p>" +
+			"<p> Are these correct? </p>"
+			},
+			on_finish: function(data){
+				if(responseLeft==responseRight){
+					goodButtons = 1
+				}else {
+				goodButtons =  data.response
+				}
+			}
+		};		
+		
+		
+		var buttons = {
+			timeline: [buttonLeft, buttonRight,  correctButtons],
+			loop_function: function(){
+				key_response = goodButtons;
+     	 		if(key_response == 1){
+       			 return true;
+      			} else {
+        		return false;
+      			}
+    		}
+		}
+		
+		
+  		timeline.push(buttons);
+
+		/* define instructions trial */
+		var instructions = {
+			type: "html-keyboard-response",
+			choices: jsPsych.NO_KEYS,
+			stimulus: function(){
+				return "<p>In this experiment, you will be asked to make a number of choices.</p>" +
+			    "<p>Each choice will involve deciding between two options. </p>" +
+				"One option will always have a guaranteed reward. " +
+				"The other option will have some degree of risk.</p>" +
+			    "<p>The size of the reward and the chance of winning will change with each decision.</p>"+
+				"<p>Press <b>" + responseLeft.toUpperCase() + "</b> on the keyboard to select the left option.</p>" +
+				"<p>Press <b>" + responseRight.toUpperCase() + "</b> on the keyboard to select the right option.</p>" +
+				"<p> We recommend resting your left and right index fingers on these keys.</p>" +
+				"<p> You can commence the experiment shortly. </p>"
+				},
+			post_trial_gap: 0,
+			trial_duration: 10000
+		};
+		timeline.push(instructions);
+
+		var instructions2 = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: function(){
+				return "<p>In this experiment, you will be asked to make a number of choices.</p>" +
+			    "<p>Each choice will involve deciding between two options. </p>" +
+				"One option will always have a guaranteed reward. " +
+				"The other option will have some degree of risk.</p>" +
+			    "<p>The size of the reward and the chance of winning will change with each decision.</p>"+
+				"<p>Press <b>" + responseLeft.toUpperCase() + "</b> on the keyboard to select the left option.</p>" +
+				"<p>Press <b>" + responseRight.toUpperCase() + "</b> on the keyboard to select the right option.</p>" +
+				"<p> We recommend resting your left and right index fingers on these keys.</p>" +
+				"<p><b>Press space bar to begin.</b></p>"
+				},
+			post_trial_gap: 1000
+		};
+		timeline.push(instructions2);
+
+
+
+
+		/* test trials */
+        var test_stimuli_R1 = [{ stimulus: 'img/prob_1_RiskSafe.png', data: {test_prob: '1', High: -0.3 , Low: -2.1, High_Prob: 96, Low_Prob: 4,  Safe: -0.3, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_2_RiskSafe.png', data: {test_prob: '2', High: -0.9 , Low: -4.2, High_Prob: 95, Low_Prob: 5,  Safe: -1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_3_RiskSafe.png', data: {test_prob: '3', High: -6.3 , Low: -15.2, High_Prob: 30, Low_Prob: 70,  Safe: -12.2, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_4_RiskSafe.png', data: {test_prob: '4', High: -10 , Low: -29.2, High_Prob: 20, Low_Prob: 80,  Safe: -25.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_5_RiskSafe.png', data: {test_prob: '5', High: -1.7 , Low: -3.9, High_Prob: 90, Low_Prob: 10,  Safe: -1.9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_6_RiskSafe.png', data: {test_prob: '6', High: -6.3 , Low: -15.7, High_Prob: 99, Low_Prob: 1,  Safe: -6.4, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_7_RiskSafe.png', data: {test_prob: '7', High: -5.6 , Low: -20.2, High_Prob: 70, Low_Prob: 30,  Safe: -11.7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_8_RiskSafe.png', data: {test_prob: '8', High: -0.7 , Low: -6.5, High_Prob: 10, Low_Prob: 90,  Safe: -6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_9_RiskSafe.png', data: {test_prob: '9', High: -5.7 , Low: -16.3, High_Prob: 95, Low_Prob: 5,  Safe: -6.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_10_RiskSafe.png', data: {test_prob: '10', High: -1.5 , Low: -6.4, High_Prob: 92, Low_Prob: 8,  Safe: -1.8, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_11_RiskSafe.png', data: {test_prob: '11', High: -1.2 , Low: -12.3, High_Prob: 2, Low_Prob: 98,  Safe: -12.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_12_RiskSafe.png', data: {test_prob: '12', High: -5.4 , Low: -16.8, High_Prob: 94, Low_Prob: 6,  Safe: -6.4, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_13_RiskSafe.png', data: {test_prob: '13', High: -2 , Low: -10.4, High_Prob: 5, Low_Prob: 95,  Safe: -9.4, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_14_RiskSafe.png', data: {test_prob: '14', High: -8.8 , Low: -19.5, High_Prob: 60, Low_Prob: 40,  Safe: -15.5, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_15_RiskSafe.png', data: {test_prob: '15', High: -8.9 , Low: -26.3, High_Prob: 8, Low_Prob: 92,  Safe: -25.4, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_16_RiskSafe.png', data: {test_prob: '16', High: -7.1 , Low: -19.6, High_Prob: 7, Low_Prob: 93,  Safe: -18.7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_17_RiskSafe.png', data: {test_prob: '17', High: -9.7 , Low: -24.7, High_Prob: 10, Low_Prob: 90,  Safe: -23.8, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_18_RiskSafe.png', data: {test_prob: '18', High: -4 , Low: -9.3, High_Prob: 20, Low_Prob: 80,  Safe: -8.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_19_RiskSafe.png', data: {test_prob: '19', High: -6.5 , Low: -17.5, High_Prob: 90, Low_Prob: 10,  Safe: -8.4, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_20_RiskSafe.png', data: {test_prob: '20', High: -4.3 , Low: -16.1, High_Prob: 60, Low_Prob: 40,  Safe: -4.5, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_21_RiskSafe.png', data: {test_prob: '21', High: 2 , Low: -5.7, High_Prob: 10, Low_Prob: 90,  Safe: -4.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_22_RiskSafe.png', data: {test_prob: '22', High: 9.6 , Low: -6.4, High_Prob: 91, Low_Prob: 9,  Safe: 8.7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_23_RiskSafe.png', data: {test_prob: '23', High: 7.3 , Low: -3.6, High_Prob: 80, Low_Prob: 20,  Safe: 5.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_24_RiskSafe.png', data: {test_prob: '24', High: 9.2 , Low: -9.5, High_Prob: 5, Low_Prob: 95,  Safe: -7.5, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_25_RiskSafe.png', data: {test_prob: '25', High: 7.4 , Low: -6.6, High_Prob: 2, Low_Prob: 98,  Safe: -6.4, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_26_RiskSafe.png', data: {test_prob: '26', High: 6.4 , Low: -5.3, High_Prob: 5, Low_Prob: 95,  Safe: -4.9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_27_RiskSafe.png', data: {test_prob: '27', High: 1.6 , Low: -8.3, High_Prob: 93, Low_Prob: 7,  Safe: 1.2, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_28_RiskSafe.png', data: {test_prob: '28', High: 5.9 , Low: -0.8, High_Prob: 80, Low_Prob: 20,  Safe: 4.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_29_RiskSafe.png', data: {test_prob: '29', High: 7.9 , Low: -2.3, High_Prob: 92, Low_Prob: 8,  Safe: 7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_30_RiskSafe.png', data: {test_prob: '30', High: 3 , Low: -7.7, High_Prob: 91, Low_Prob: 9,  Safe: 1.4, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_31_RiskSafe.png', data: {test_prob: '31', High: 6.7 , Low: -1.8, High_Prob: 95, Low_Prob: 5,  Safe: 6.4, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_32_RiskSafe.png', data: {test_prob: '32', High: 6.7 , Low: -5, High_Prob: 93, Low_Prob: 7,  Safe: 5.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_33_RiskSafe.png', data: {test_prob: '33', High: 7.3 , Low: -8.5, High_Prob: 96, Low_Prob: 4,  Safe: 6.8, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_34_RiskSafe.png', data: {test_prob: '34', High: 1.3 , Low: -4.3, High_Prob: 5, Low_Prob: 95,  Safe: -4.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_35_RiskSafe.png', data: {test_prob: '35', High: 3 , Low: -7.2, High_Prob: 93, Low_Prob: 7,  Safe: 2.2, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_36_RiskSafe.png', data: {test_prob: '36', High: 5 , Low: -9.1, High_Prob: 8, Low_Prob: 92,  Safe: -7.9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_37_RiskSafe.png', data: {test_prob: '37', High: 2.1 , Low: -8.4, High_Prob: 80, Low_Prob: 20,  Safe: 1.3, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_38_RiskSafe.png', data: {test_prob: '38', High: 6.7 , Low: -6.2, High_Prob: 7, Low_Prob: 93,  Safe: -5.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_39_RiskSafe.png', data: {test_prob: '39', High: 7.4 , Low: -8.2, High_Prob: 30, Low_Prob: 70,  Safe: -6.9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_40_RiskSafe.png', data: {test_prob: '40', High: 6 , Low: -1.3, High_Prob: 98, Low_Prob: 2,  Safe: 5.9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_41_RiskSafe.png', data: {test_prob: '41', High: 18.8 , Low: 7.6, High_Prob: 80, Low_Prob: 20,  Safe: 15.5, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_42_RiskSafe.png', data: {test_prob: '42', High: 17.9 , Low: 7.2, High_Prob: 92, Low_Prob: 8,  Safe: 17.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_43_RiskSafe.png', data: {test_prob: '43', High: 22.9 , Low: 9.6, High_Prob: 6, Low_Prob: 94,  Safe: 9.2, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_44_RiskSafe.png', data: {test_prob: '44', High: 10 , Low: 1.7, High_Prob: 96, Low_Prob: 4,  Safe: 9.9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_45_RiskSafe.png', data: {test_prob: '45', High: 2.8 , Low: 1, High_Prob: 80, Low_Prob: 20,  Safe: 2.2, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_46_RiskSafe.png', data: {test_prob: '46', High: 17.1 , Low: 6.9, High_Prob: 10, Low_Prob: 90,  Safe: 8, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_47_RiskSafe.png', data: {test_prob: '47', High: 24.3 , Low: 9.7, High_Prob: 4, Low_Prob: 96,  Safe: 10.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_48_RiskSafe.png', data: {test_prob: '48', High: 18.2 , Low: 6.9, High_Prob: 98, Low_Prob: 2,  Safe: 18.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_49_RiskSafe.png', data: {test_prob: '49', High: 13.4 , Low: 3.8, High_Prob: 50, Low_Prob: 50,  Safe: 9.9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_50_RiskSafe.png', data: {test_prob: '50', High: 5.8 , Low: 2.7, High_Prob: 4, Low_Prob: 96,  Safe: 2.8, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_51_RiskSafe.png', data: {test_prob: '51', High: 13.1 , Low: 3.8, High_Prob: 94, Low_Prob: 6,  Safe: 12.8, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_52_RiskSafe.png', data: {test_prob: '52', High: 3.5 , Low: 0.1, High_Prob: 9, Low_Prob: 91,  Safe: 0.5, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_53_RiskSafe.png', data: {test_prob: '53', High: 25.7 , Low: 8.1, High_Prob: 10, Low_Prob: 90,  Safe: 11.5, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_54_RiskSafe.png', data: {test_prob: '54', High: 16.5 , Low: 6.9, High_Prob: 1, Low_Prob: 99,  Safe: 7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_55_RiskSafe.png', data: {test_prob: '55', High: 11.4 , Low: 1.9, High_Prob: 97, Low_Prob: 3,  Safe: 11, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_56_RiskSafe.png', data: {test_prob: '56', High: 26.5 , Low: 8.3, High_Prob: 94, Low_Prob: 6,  Safe: 25.2, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_57_RiskSafe.png', data: {test_prob: '57', High: 11.5 , Low: 3.7, High_Prob: 60, Low_Prob: 40,  Safe: 7.9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_58_RiskSafe.png', data: {test_prob: '58', High: 20.8 , Low: 8.9, High_Prob: 99, Low_Prob: 1,  Safe: 20.7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_59_RiskSafe.png', data: {test_prob: '59', High: 10.1 , Low: 4.2, High_Prob: 30, Low_Prob: 70,  Safe: 6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_60_RiskSafe.png', data: {test_prob: '60', High: 8 , Low: 0.8, High_Prob: 92, Low_Prob: 8,  Safe: 7.7, option1: 'risk', option2: 'safe' } }];    
+        var test_stimuli_R2 = [{ stimulus: 'img/prob_61_RiskSafe.png', data: {test_prob: '61', High: -8.7 , Low: -22.8, High_Prob: 6, Low_Prob: 94,  Safe: -21.4, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_62_RiskSafe.png', data: {test_prob: '62', High: -2.2 , Low: -9.6, High_Prob: 9, Low_Prob: 91,  Safe: -8.7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_63_RiskSafe.png', data: {test_prob: '63', High: -2 , Low: -11.2, High_Prob: 10, Low_Prob: 90,  Safe: -9.5, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_64_RiskSafe.png', data: {test_prob: '64', High: -1.4 , Low: -9.1, High_Prob: 2, Low_Prob: 98,  Safe: -9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_65_RiskSafe.png', data: {test_prob: '65', High: -0.9 , Low: -4.8, High_Prob: 7, Low_Prob: 93,  Safe: -4.7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_66_RiskSafe.png', data: {test_prob: '66', High: -4.7 , Low: -18.1, High_Prob: 91, Low_Prob: 9,  Safe: -6.8, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_67_RiskSafe.png', data: {test_prob: '67', High: -9.7 , Low: -24.8, High_Prob: 6, Low_Prob: 94,  Safe: -24.2, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_68_RiskSafe.png', data: {test_prob: '68', High: -5.7 , Low: -20.6, High_Prob: 96, Low_Prob: 4,  Safe: -6.4, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_69_RiskSafe.png', data: {test_prob: '69', High: -5.6 , Low: -19.4, High_Prob: 10, Low_Prob: 90,  Safe: -18.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_70_RiskSafe.png', data: {test_prob: '70', High: -2.5 , Low: -5.5, High_Prob: 60, Low_Prob: 40,  Safe: -3.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_71_RiskSafe.png', data: {test_prob: '71', High: -5.8 , Low: -16.4, High_Prob: 97, Low_Prob: 3,  Safe: -6.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_72_RiskSafe.png', data: {test_prob: '72', High: -7.2 , Low: -16.1, High_Prob: 5, Low_Prob: 95,  Safe: -15.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_73_RiskSafe.png', data: {test_prob: '73', High: -1.8 , Low: -6.7, High_Prob: 93, Low_Prob: 7,  Safe: -2, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_74_RiskSafe.png', data: {test_prob: '74', High: -6.4 , Low: -22.4, High_Prob: 20, Low_Prob: 80,  Safe: -18, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_75_RiskSafe.png', data: {test_prob: '75', High: -3.3 , Low: -10.5, High_Prob: 97, Low_Prob: 3,  Safe: -3.2, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_76_RiskSafe.png', data: {test_prob: '76', High: -9.5 , Low: -24.5, High_Prob: 10, Low_Prob: 90,  Safe: -23.5, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_77_RiskSafe.png', data: {test_prob: '77', High: -2.2 , Low: -11.5, High_Prob: 92, Low_Prob: 8,  Safe: -3.4, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_78_RiskSafe.png', data: {test_prob: '78', High: -1.4 , Low: -4.7, High_Prob: 93, Low_Prob: 7,  Safe: -1.7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_79_RiskSafe.png', data: {test_prob: '79', High: -8.6 , Low: -26.5, High_Prob: 10, Low_Prob: 90,  Safe: -26.3, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_80_RiskSafe.png', data: {test_prob: '80', High: -6.9 , Low: -20.5, High_Prob: 6, Low_Prob: 94,  Safe: -20.3, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_81_RiskSafe.png', data: {test_prob: '81', High: 1.8 , Low: -4.1, High_Prob: 60, Low_Prob: 40,  Safe: 1.7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_82_RiskSafe.png', data: {test_prob: '82', High: 9 , Low: -6.7, High_Prob: 97, Low_Prob: 3,  Safe: 9.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_83_RiskSafe.png', data: {test_prob: '83', High: 5.5 , Low: -3.4, High_Prob: 6, Low_Prob: 94,  Safe: -2.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_84_RiskSafe.png', data: {test_prob: '84', High: 1 , Low: -7.1, High_Prob: 93, Low_Prob: 7,  Safe: 0.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_85_RiskSafe.png', data: {test_prob: '85', High: 3 , Low: -1.3, High_Prob: 20, Low_Prob: 80,  Safe: -0.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_86_RiskSafe.png', data: {test_prob: '86', High: 8.9 , Low: -1.4, High_Prob: 10, Low_Prob: 90,  Safe: -0.9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_87_RiskSafe.png', data: {test_prob: '87', High: 9.4 , Low: -6.3, High_Prob: 95, Low_Prob: 5,  Safe: 8.5, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_88_RiskSafe.png', data: {test_prob: '88', High: 3.3 , Low: -3.5, High_Prob: 91, Low_Prob: 9,  Safe: 2.7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_89_RiskSafe.png', data: {test_prob: '89', High: 5 , Low: -6.9, High_Prob: 40, Low_Prob: 60,  Safe: -3.8, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_90_RiskSafe.png', data: {test_prob: '90', High: 2.1 , Low: -9.4, High_Prob: 6, Low_Prob: 94,  Safe: -8.4, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_91_RiskSafe.png', data: {test_prob: '91', High: 0.9 , Low: -5, High_Prob: 20, Low_Prob: 80,  Safe: -5.3, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_92_RiskSafe.png', data: {test_prob: '92', High: 9.9 , Low: -8.7, High_Prob: 5, Low_Prob: 95,  Safe: -7.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_93_RiskSafe.png', data: {test_prob: '93', High: 7.7 , Low: -3.1, High_Prob: 2, Low_Prob: 98,  Safe: -3, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_94_RiskSafe.png', data: {test_prob: '94', High: 2.5 , Low: -2, High_Prob: 96, Low_Prob: 4,  Safe: 2.3, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_95_RiskSafe.png', data: {test_prob: '95', High: 9.2 , Low: -0.7, High_Prob: 91, Low_Prob: 9,  Safe: 8.2, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_96_RiskSafe.png', data: {test_prob: '96', High: 2.9 , Low: -9.4, High_Prob: 98, Low_Prob: 2,  Safe: 2.9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_97_RiskSafe.png', data: {test_prob: '97', High: 2.9 , Low: -6.5, High_Prob: 5, Low_Prob: 95,  Safe: -5.7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_98_RiskSafe.png', data: {test_prob: '98', High: 7.8 , Low: -9.3, High_Prob: 99, Low_Prob: 1,  Safe: 7.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_99_RiskSafe.png', data: {test_prob: '99', High: 6.5 , Low: -4.8, High_Prob: 80, Low_Prob: 20,  Safe: 6.2, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_100_RiskSafe.png', data: {test_prob: '100', High: 5 , Low: -3.8, High_Prob: 90, Low_Prob: 10,  Safe: 4.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_101_RiskSafe.png', data: {test_prob: '101', High: 20.1 , Low: 6.5, High_Prob: 95, Low_Prob: 5,  Safe: 19.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_102_RiskSafe.png', data: {test_prob: '102', High: 5.2 , Low: 1.4, High_Prob: 50, Low_Prob: 50,  Safe: 5.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_103_RiskSafe.png', data: {test_prob: '103', High: 12 , Low: 2.4, High_Prob: 50, Low_Prob: 50,  Safe: 9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_104_RiskSafe.png', data: {test_prob: '104', High: 20.7 , Low: 9.1, High_Prob: 90, Low_Prob: 10,  Safe: 19.8, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_105_RiskSafe.png', data: {test_prob: '105', High: 8.4 , Low: 1.2, High_Prob: 7, Low_Prob: 93,  Safe: 1.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_106_RiskSafe.png', data: {test_prob: '106', High: 22.6 , Low: 7.2, High_Prob: 40, Low_Prob: 60,  Safe: 12.4, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_107_RiskSafe.png', data: {test_prob: '107', High: 23.4 , Low: 7.6, High_Prob: 93, Low_Prob: 7,  Safe: 22.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_108_RiskSafe.png', data: {test_prob: '108', High: 17.2 , Low: 5, High_Prob: 9, Low_Prob: 91,  Safe: 5.9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_109_RiskSafe.png', data: {test_prob: '109', High: 18.9 , Low: 6.7, High_Prob: 90, Low_Prob: 10,  Safe: 17.7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_110_RiskSafe.png', data: {test_prob: '110', High: 12.8 , Low: 4.7, High_Prob: 4, Low_Prob: 96,  Safe: 4.9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_111_RiskSafe.png', data: {test_prob: '111', High: 19.1 , Low: 4.8, High_Prob: 3, Low_Prob: 97,  Safe: 5.2, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_112_RiskSafe.png', data: {test_prob: '112', High: 12.3 , Low: 1.3, High_Prob: 91, Low_Prob: 9,  Safe: 12.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_113_RiskSafe.png', data: {test_prob: '113', High: 6.8 , Low: 3, High_Prob: 90, Low_Prob: 10,  Safe: 6.7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_114_RiskSafe.png', data: {test_prob: '114', High: 22.6 , Low: 9.2, High_Prob: 30, Low_Prob: 70,  Safe: 11, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_115_RiskSafe.png', data: {test_prob: '115', High: 6.4 , Low: 0.5, High_Prob: 9, Low_Prob: 91,  Safe: 1.5, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_116_RiskSafe.png', data: {test_prob: '116', High: 15.3 , Low: 5.9, High_Prob: 6, Low_Prob: 94,  Safe: 7.1, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_117_RiskSafe.png', data: {test_prob: '117', High: 5.3 , Low: 1.5, High_Prob: 90, Low_Prob: 10,  Safe: 4.7, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_118_RiskSafe.png', data: {test_prob: '118', High: 21.9 , Low: 8.1, High_Prob: 50, Low_Prob: 50,  Safe: 12.6, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_119_RiskSafe.png', data: {test_prob: '119', High: 27.5 , Low: 9.2, High_Prob: 70, Low_Prob: 30,  Safe: 21.9, option1: 'risk', option2: 'safe' } },{ stimulus: 'img/prob_120_RiskSafe.png', data: {test_prob: '120', High: 4.4 , Low: 0.7, High_Prob: 20, Low_Prob: 80,  Safe: 1.1, option1: 'risk', option2: 'safe' } }];
+        var test_stimuli_S1 = [{ stimulus: 'img/prob_1_SafeRisk.png', data: {test_prob: '1', High: -0.3 , Low: -2.1, High_Prob: 96, Low_Prob: 4,  Safe: -0.3, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_2_SafeRisk.png', data: {test_prob: '2', High: -0.9 , Low: -4.2, High_Prob: 95, Low_Prob: 5,  Safe: -1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_3_SafeRisk.png', data: {test_prob: '3', High: -6.3 , Low: -15.2, High_Prob: 30, Low_Prob: 70,  Safe: -12.2, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_4_SafeRisk.png', data: {test_prob: '4', High: -10 , Low: -29.2, High_Prob: 20, Low_Prob: 80,  Safe: -25.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_5_SafeRisk.png', data: {test_prob: '5', High: -1.7 , Low: -3.9, High_Prob: 90, Low_Prob: 10,  Safe: -1.9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_6_SafeRisk.png', data: {test_prob: '6', High: -6.3 , Low: -15.7, High_Prob: 99, Low_Prob: 1,  Safe: -6.4, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_7_SafeRisk.png', data: {test_prob: '7', High: -5.6 , Low: -20.2, High_Prob: 70, Low_Prob: 30,  Safe: -11.7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_8_SafeRisk.png', data: {test_prob: '8', High: -0.7 , Low: -6.5, High_Prob: 10, Low_Prob: 90,  Safe: -6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_9_SafeRisk.png', data: {test_prob: '9', High: -5.7 , Low: -16.3, High_Prob: 95, Low_Prob: 5,  Safe: -6.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_10_SafeRisk.png', data: {test_prob: '10', High: -1.5 , Low: -6.4, High_Prob: 92, Low_Prob: 8,  Safe: -1.8, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_11_SafeRisk.png', data: {test_prob: '11', High: -1.2 , Low: -12.3, High_Prob: 2, Low_Prob: 98,  Safe: -12.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_12_SafeRisk.png', data: {test_prob: '12', High: -5.4 , Low: -16.8, High_Prob: 94, Low_Prob: 6,  Safe: -6.4, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_13_SafeRisk.png', data: {test_prob: '13', High: -2 , Low: -10.4, High_Prob: 5, Low_Prob: 95,  Safe: -9.4, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_14_SafeRisk.png', data: {test_prob: '14', High: -8.8 , Low: -19.5, High_Prob: 60, Low_Prob: 40,  Safe: -15.5, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_15_SafeRisk.png', data: {test_prob: '15', High: -8.9 , Low: -26.3, High_Prob: 8, Low_Prob: 92,  Safe: -25.4, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_16_SafeRisk.png', data: {test_prob: '16', High: -7.1 , Low: -19.6, High_Prob: 7, Low_Prob: 93,  Safe: -18.7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_17_SafeRisk.png', data: {test_prob: '17', High: -9.7 , Low: -24.7, High_Prob: 10, Low_Prob: 90,  Safe: -23.8, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_18_SafeRisk.png', data: {test_prob: '18', High: -4 , Low: -9.3, High_Prob: 20, Low_Prob: 80,  Safe: -8.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_19_SafeRisk.png', data: {test_prob: '19', High: -6.5 , Low: -17.5, High_Prob: 90, Low_Prob: 10,  Safe: -8.4, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_20_SafeRisk.png', data: {test_prob: '20', High: -4.3 , Low: -16.1, High_Prob: 60, Low_Prob: 40,  Safe: -4.5, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_21_SafeRisk.png', data: {test_prob: '21', High: 2 , Low: -5.7, High_Prob: 10, Low_Prob: 90,  Safe: -4.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_22_SafeRisk.png', data: {test_prob: '22', High: 9.6 , Low: -6.4, High_Prob: 91, Low_Prob: 9,  Safe: 8.7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_23_SafeRisk.png', data: {test_prob: '23', High: 7.3 , Low: -3.6, High_Prob: 80, Low_Prob: 20,  Safe: 5.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_24_SafeRisk.png', data: {test_prob: '24', High: 9.2 , Low: -9.5, High_Prob: 5, Low_Prob: 95,  Safe: -7.5, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_25_SafeRisk.png', data: {test_prob: '25', High: 7.4 , Low: -6.6, High_Prob: 2, Low_Prob: 98,  Safe: -6.4, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_26_SafeRisk.png', data: {test_prob: '26', High: 6.4 , Low: -5.3, High_Prob: 5, Low_Prob: 95,  Safe: -4.9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_27_SafeRisk.png', data: {test_prob: '27', High: 1.6 , Low: -8.3, High_Prob: 93, Low_Prob: 7,  Safe: 1.2, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_28_SafeRisk.png', data: {test_prob: '28', High: 5.9 , Low: -0.8, High_Prob: 80, Low_Prob: 20,  Safe: 4.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_29_SafeRisk.png', data: {test_prob: '29', High: 7.9 , Low: -2.3, High_Prob: 92, Low_Prob: 8,  Safe: 7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_30_SafeRisk.png', data: {test_prob: '30', High: 3 , Low: -7.7, High_Prob: 91, Low_Prob: 9,  Safe: 1.4, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_31_SafeRisk.png', data: {test_prob: '31', High: 6.7 , Low: -1.8, High_Prob: 95, Low_Prob: 5,  Safe: 6.4, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_32_SafeRisk.png', data: {test_prob: '32', High: 6.7 , Low: -5, High_Prob: 93, Low_Prob: 7,  Safe: 5.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_33_SafeRisk.png', data: {test_prob: '33', High: 7.3 , Low: -8.5, High_Prob: 96, Low_Prob: 4,  Safe: 6.8, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_34_SafeRisk.png', data: {test_prob: '34', High: 1.3 , Low: -4.3, High_Prob: 5, Low_Prob: 95,  Safe: -4.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_35_SafeRisk.png', data: {test_prob: '35', High: 3 , Low: -7.2, High_Prob: 93, Low_Prob: 7,  Safe: 2.2, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_36_SafeRisk.png', data: {test_prob: '36', High: 5 , Low: -9.1, High_Prob: 8, Low_Prob: 92,  Safe: -7.9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_37_SafeRisk.png', data: {test_prob: '37', High: 2.1 , Low: -8.4, High_Prob: 80, Low_Prob: 20,  Safe: 1.3, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_38_SafeRisk.png', data: {test_prob: '38', High: 6.7 , Low: -6.2, High_Prob: 7, Low_Prob: 93,  Safe: -5.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_39_SafeRisk.png', data: {test_prob: '39', High: 7.4 , Low: -8.2, High_Prob: 30, Low_Prob: 70,  Safe: -6.9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_40_SafeRisk.png', data: {test_prob: '40', High: 6 , Low: -1.3, High_Prob: 98, Low_Prob: 2,  Safe: 5.9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_41_SafeRisk.png', data: {test_prob: '41', High: 18.8 , Low: 7.6, High_Prob: 80, Low_Prob: 20,  Safe: 15.5, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_42_SafeRisk.png', data: {test_prob: '42', High: 17.9 , Low: 7.2, High_Prob: 92, Low_Prob: 8,  Safe: 17.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_43_SafeRisk.png', data: {test_prob: '43', High: 22.9 , Low: 9.6, High_Prob: 6, Low_Prob: 94,  Safe: 9.2, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_44_SafeRisk.png', data: {test_prob: '44', High: 10 , Low: 1.7, High_Prob: 96, Low_Prob: 4,  Safe: 9.9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_45_SafeRisk.png', data: {test_prob: '45', High: 2.8 , Low: 1, High_Prob: 80, Low_Prob: 20,  Safe: 2.2, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_46_SafeRisk.png', data: {test_prob: '46', High: 17.1 , Low: 6.9, High_Prob: 10, Low_Prob: 90,  Safe: 8, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_47_SafeRisk.png', data: {test_prob: '47', High: 24.3 , Low: 9.7, High_Prob: 4, Low_Prob: 96,  Safe: 10.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_48_SafeRisk.png', data: {test_prob: '48', High: 18.2 , Low: 6.9, High_Prob: 98, Low_Prob: 2,  Safe: 18.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_49_SafeRisk.png', data: {test_prob: '49', High: 13.4 , Low: 3.8, High_Prob: 50, Low_Prob: 50,  Safe: 9.9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_50_SafeRisk.png', data: {test_prob: '50', High: 5.8 , Low: 2.7, High_Prob: 4, Low_Prob: 96,  Safe: 2.8, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_51_SafeRisk.png', data: {test_prob: '51', High: 13.1 , Low: 3.8, High_Prob: 94, Low_Prob: 6,  Safe: 12.8, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_52_SafeRisk.png', data: {test_prob: '52', High: 3.5 , Low: 0.1, High_Prob: 9, Low_Prob: 91,  Safe: 0.5, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_53_SafeRisk.png', data: {test_prob: '53', High: 25.7 , Low: 8.1, High_Prob: 10, Low_Prob: 90,  Safe: 11.5, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_54_SafeRisk.png', data: {test_prob: '54', High: 16.5 , Low: 6.9, High_Prob: 1, Low_Prob: 99,  Safe: 7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_55_SafeRisk.png', data: {test_prob: '55', High: 11.4 , Low: 1.9, High_Prob: 97, Low_Prob: 3,  Safe: 11, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_56_SafeRisk.png', data: {test_prob: '56', High: 26.5 , Low: 8.3, High_Prob: 94, Low_Prob: 6,  Safe: 25.2, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_57_SafeRisk.png', data: {test_prob: '57', High: 11.5 , Low: 3.7, High_Prob: 60, Low_Prob: 40,  Safe: 7.9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_58_SafeRisk.png', data: {test_prob: '58', High: 20.8 , Low: 8.9, High_Prob: 99, Low_Prob: 1,  Safe: 20.7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_59_SafeRisk.png', data: {test_prob: '59', High: 10.1 , Low: 4.2, High_Prob: 30, Low_Prob: 70,  Safe: 6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_60_SafeRisk.png', data: {test_prob: '60', High: 8 , Low: 0.8, High_Prob: 92, Low_Prob: 8,  Safe: 7.7, option1: 'safe', option2: 'risk' } }];
+        var test_stimuli_S2 = [{ stimulus: 'img/prob_61_SafeRisk.png', data: {test_prob: '61', High: -8.7 , Low: -22.8, High_Prob: 6, Low_Prob: 94,  Safe: -21.4, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_62_SafeRisk.png', data: {test_prob: '62', High: -2.2 , Low: -9.6, High_Prob: 9, Low_Prob: 91,  Safe: -8.7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_63_SafeRisk.png', data: {test_prob: '63', High: -2 , Low: -11.2, High_Prob: 10, Low_Prob: 90,  Safe: -9.5, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_64_SafeRisk.png', data: {test_prob: '64', High: -1.4 , Low: -9.1, High_Prob: 2, Low_Prob: 98,  Safe: -9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_65_SafeRisk.png', data: {test_prob: '65', High: -0.9 , Low: -4.8, High_Prob: 7, Low_Prob: 93,  Safe: -4.7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_66_SafeRisk.png', data: {test_prob: '66', High: -4.7 , Low: -18.1, High_Prob: 91, Low_Prob: 9,  Safe: -6.8, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_67_SafeRisk.png', data: {test_prob: '67', High: -9.7 , Low: -24.8, High_Prob: 6, Low_Prob: 94,  Safe: -24.2, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_68_SafeRisk.png', data: {test_prob: '68', High: -5.7 , Low: -20.6, High_Prob: 96, Low_Prob: 4,  Safe: -6.4, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_69_SafeRisk.png', data: {test_prob: '69', High: -5.6 , Low: -19.4, High_Prob: 10, Low_Prob: 90,  Safe: -18.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_70_SafeRisk.png', data: {test_prob: '70', High: -2.5 , Low: -5.5, High_Prob: 60, Low_Prob: 40,  Safe: -3.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_71_SafeRisk.png', data: {test_prob: '71', High: -5.8 , Low: -16.4, High_Prob: 97, Low_Prob: 3,  Safe: -6.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_72_SafeRisk.png', data: {test_prob: '72', High: -7.2 , Low: -16.1, High_Prob: 5, Low_Prob: 95,  Safe: -15.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_73_SafeRisk.png', data: {test_prob: '73', High: -1.8 , Low: -6.7, High_Prob: 93, Low_Prob: 7,  Safe: -2, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_74_SafeRisk.png', data: {test_prob: '74', High: -6.4 , Low: -22.4, High_Prob: 20, Low_Prob: 80,  Safe: -18, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_75_SafeRisk.png', data: {test_prob: '75', High: -3.3 , Low: -10.5, High_Prob: 97, Low_Prob: 3,  Safe: -3.2, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_76_SafeRisk.png', data: {test_prob: '76', High: -9.5 , Low: -24.5, High_Prob: 10, Low_Prob: 90,  Safe: -23.5, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_77_SafeRisk.png', data: {test_prob: '77', High: -2.2 , Low: -11.5, High_Prob: 92, Low_Prob: 8,  Safe: -3.4, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_78_SafeRisk.png', data: {test_prob: '78', High: -1.4 , Low: -4.7, High_Prob: 93, Low_Prob: 7,  Safe: -1.7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_79_SafeRisk.png', data: {test_prob: '79', High: -8.6 , Low: -26.5, High_Prob: 10, Low_Prob: 90,  Safe: -26.3, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_80_SafeRisk.png', data: {test_prob: '80', High: -6.9 , Low: -20.5, High_Prob: 6, Low_Prob: 94,  Safe: -20.3, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_81_SafeRisk.png', data: {test_prob: '81', High: 1.8 , Low: -4.1, High_Prob: 60, Low_Prob: 40,  Safe: 1.7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_82_SafeRisk.png', data: {test_prob: '82', High: 9 , Low: -6.7, High_Prob: 97, Low_Prob: 3,  Safe: 9.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_83_SafeRisk.png', data: {test_prob: '83', High: 5.5 , Low: -3.4, High_Prob: 6, Low_Prob: 94,  Safe: -2.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_84_SafeRisk.png', data: {test_prob: '84', High: 1 , Low: -7.1, High_Prob: 93, Low_Prob: 7,  Safe: 0.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_85_SafeRisk.png', data: {test_prob: '85', High: 3 , Low: -1.3, High_Prob: 20, Low_Prob: 80,  Safe: -0.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_86_SafeRisk.png', data: {test_prob: '86', High: 8.9 , Low: -1.4, High_Prob: 10, Low_Prob: 90,  Safe: -0.9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_87_SafeRisk.png', data: {test_prob: '87', High: 9.4 , Low: -6.3, High_Prob: 95, Low_Prob: 5,  Safe: 8.5, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_88_SafeRisk.png', data: {test_prob: '88', High: 3.3 , Low: -3.5, High_Prob: 91, Low_Prob: 9,  Safe: 2.7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_89_SafeRisk.png', data: {test_prob: '89', High: 5 , Low: -6.9, High_Prob: 40, Low_Prob: 60,  Safe: -3.8, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_90_SafeRisk.png', data: {test_prob: '90', High: 2.1 , Low: -9.4, High_Prob: 6, Low_Prob: 94,  Safe: -8.4, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_91_SafeRisk.png', data: {test_prob: '91', High: 0.9 , Low: -5, High_Prob: 20, Low_Prob: 80,  Safe: -5.3, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_92_SafeRisk.png', data: {test_prob: '92', High: 9.9 , Low: -8.7, High_Prob: 5, Low_Prob: 95,  Safe: -7.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_93_SafeRisk.png', data: {test_prob: '93', High: 7.7 , Low: -3.1, High_Prob: 2, Low_Prob: 98,  Safe: -3, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_94_SafeRisk.png', data: {test_prob: '94', High: 2.5 , Low: -2, High_Prob: 96, Low_Prob: 4,  Safe: 2.3, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_95_SafeRisk.png', data: {test_prob: '95', High: 9.2 , Low: -0.7, High_Prob: 91, Low_Prob: 9,  Safe: 8.2, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_96_SafeRisk.png', data: {test_prob: '96', High: 2.9 , Low: -9.4, High_Prob: 98, Low_Prob: 2,  Safe: 2.9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_97_SafeRisk.png', data: {test_prob: '97', High: 2.9 , Low: -6.5, High_Prob: 5, Low_Prob: 95,  Safe: -5.7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_98_SafeRisk.png', data: {test_prob: '98', High: 7.8 , Low: -9.3, High_Prob: 99, Low_Prob: 1,  Safe: 7.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_99_SafeRisk.png', data: {test_prob: '99', High: 6.5 , Low: -4.8, High_Prob: 80, Low_Prob: 20,  Safe: 6.2, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_100_SafeRisk.png', data: {test_prob: '100', High: 5 , Low: -3.8, High_Prob: 90, Low_Prob: 10,  Safe: 4.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_101_SafeRisk.png', data: {test_prob: '101', High: 20.1 , Low: 6.5, High_Prob: 95, Low_Prob: 5,  Safe: 19.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_102_SafeRisk.png', data: {test_prob: '102', High: 5.2 , Low: 1.4, High_Prob: 50, Low_Prob: 50,  Safe: 5.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_103_SafeRisk.png', data: {test_prob: '103', High: 12 , Low: 2.4, High_Prob: 50, Low_Prob: 50,  Safe: 9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_104_SafeRisk.png', data: {test_prob: '104', High: 20.7 , Low: 9.1, High_Prob: 90, Low_Prob: 10,  Safe: 19.8, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_105_SafeRisk.png', data: {test_prob: '105', High: 8.4 , Low: 1.2, High_Prob: 7, Low_Prob: 93,  Safe: 1.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_106_SafeRisk.png', data: {test_prob: '106', High: 22.6 , Low: 7.2, High_Prob: 40, Low_Prob: 60,  Safe: 12.4, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_107_SafeRisk.png', data: {test_prob: '107', High: 23.4 , Low: 7.6, High_Prob: 93, Low_Prob: 7,  Safe: 22.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_108_SafeRisk.png', data: {test_prob: '108', High: 17.2 , Low: 5, High_Prob: 9, Low_Prob: 91,  Safe: 5.9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_109_SafeRisk.png', data: {test_prob: '109', High: 18.9 , Low: 6.7, High_Prob: 90, Low_Prob: 10,  Safe: 17.7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_110_SafeRisk.png', data: {test_prob: '110', High: 12.8 , Low: 4.7, High_Prob: 4, Low_Prob: 96,  Safe: 4.9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_111_SafeRisk.png', data: {test_prob: '111', High: 19.1 , Low: 4.8, High_Prob: 3, Low_Prob: 97,  Safe: 5.2, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_112_SafeRisk.png', data: {test_prob: '112', High: 12.3 , Low: 1.3, High_Prob: 91, Low_Prob: 9,  Safe: 12.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_113_SafeRisk.png', data: {test_prob: '113', High: 6.8 , Low: 3, High_Prob: 90, Low_Prob: 10,  Safe: 6.7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_114_SafeRisk.png', data: {test_prob: '114', High: 22.6 , Low: 9.2, High_Prob: 30, Low_Prob: 70,  Safe: 11, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_115_SafeRisk.png', data: {test_prob: '115', High: 6.4 , Low: 0.5, High_Prob: 9, Low_Prob: 91,  Safe: 1.5, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_116_SafeRisk.png', data: {test_prob: '116', High: 15.3 , Low: 5.9, High_Prob: 6, Low_Prob: 94,  Safe: 7.1, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_117_SafeRisk.png', data: {test_prob: '117', High: 5.3 , Low: 1.5, High_Prob: 90, Low_Prob: 10,  Safe: 4.7, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_118_SafeRisk.png', data: {test_prob: '118', High: 21.9 , Low: 8.1, High_Prob: 50, Low_Prob: 50,  Safe: 12.6, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_119_SafeRisk.png', data: {test_prob: '119', High: 27.5 , Low: 9.2, High_Prob: 70, Low_Prob: 30,  Safe: 21.9, option1: 'safe', option2: 'risk' } },{ stimulus: 'img/prob_120_SafeRisk.png', data: {test_prob: '120', High: 4.4 , Low: 0.7, High_Prob: 20, Low_Prob: 80,  Safe: 1.1, option1: 'safe', option2: 'risk' } }];
+      
+        var test_stimuli_1 = [];
+        var test_stimuli_2 = [];
+
+      for (i = 0; i < 60; i++) {
+        if (Math.random() < 0.5){
+            test_stimuli_1[i] = test_stimuli_R1[i]
+        } else{
+            test_stimuli_1[i] = test_stimuli_S1[i]
+        }
+      }
+
+      for (i = 0; i < 60; i++) {
+        if (Math.random() < 0.5){
+            test_stimuli_2[i] = test_stimuli_R2[i]
+        } else{
+            test_stimuli_2[i] = test_stimuli_S2[i]
+        }
+      }
+
+     	
+				
+		
+
+		
+		
+		
+		var start_experiment = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: " <p>You are now ready to start the experiment!" +
+						"</p><p> If you respond too slow, the trial will stop. </p>" +
+						"</p><p> If you respond too fast, you will be warned. </p>" +
+						"</p><p> Press space bar to continue</p>"
+		}
+		timeline.push(start_experiment);
+		
+		var fixation = {
+			type: 'html-keyboard-response',
+			stimulus: '<div style="font-size:60px;">+</div>',
+			choices: jsPsych.NO_KEYS,
+			trial_duration: function () {
+			return jsPsych.randomization.sampleWithoutReplacement([250, 500, 750, 1000, 1250, 1500, 1750, 2000], 1)[0];
+			},
+			data: { test_part: 'fixation' }
+		};
+
+		var test = {
+			type: 'image-keyboard-response',
+			stimulus: jsPsych.timelineVariable('stimulus'),
+			prompt: function(){return "<p>Left = <strong>Press " + responseLeft.toUpperCase() + " </strong>  &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp;  Right = <strong>Press " + responseRight.toUpperCase() + " </strong> </p>"},
+			choices: function(){return[responseLeft, responseRight]},
+			data: jsPsych.timelineVariable('data'),
+			on_finish: function (data){
+				data.test_part = "test"
+				if (online==true){
+				data.subject = username;
+				}
+				if (data.response == responseLeft){
+					data.choice = data.option1
+				} else {
+					data.choice = data.option2 
+					}
+				},
+			post_trial_gap: 0,
+			trial_duration: timeout
+		};
+		
+		
+		var feedback = {
+			type: "html-keyboard-response",
+			data: {test_part: "feedback"},
+			choices: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return [' ']
+				}else if (last_trial < tooFast){
+					return [' ']
+				} else {
+					return jsPsych.NO_KEYS
+					} 
+				},
+			stimulus: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return "<p><b> Too slow!</b> </p><p> Press space bar to continue</p> "
+				} else if (last_trial < tooFast){
+					return "<p><b> Too fast!</b> </p><p> Press space to bar continue</p> "
+				} else {
+					return ""
+					} 
+				},
+			trial_duration: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return 100000
+				}else if (last_trial < tooFast){
+					return 100000
+				} else{
+					return postTrialGap
+					}
+				},
+				on_finish: function (data){
+				if (online==true){
+					data.subject = username;
+					data.task = currentTask;
+					}
+				}
+			};
+	
+		
+		
+		
+			var start_block = {
+			type: "html-keyboard-response",
+			stimulus: "</p><p> This block has " + test_stimuli_1.length + " trials </p>" +
+						"</p><p> Press space bar to continue</p>",
+			choices: [' '],
+			data: { test_part: 'start block' }
+		};
+		
+		var test_procedure = {
+				timeline: [fixation, test, feedback],
+				timeline_variables: test_stimuli_1,
+				repetitions: 1,
+				randomize_order: true
+			};
+		
+		
+		var end_block = {
+			type: "html-keyboard-response",
+			stimulus: "This is the end of the block. Press space bar to continue",
+			choices: [' '],
+			data: { test_part: 'end block' }
+
+		};
+		
+		var test_blocks = {
+			timeline: [start_block, test_procedure, end_block],
+			randomize_order: false
+		}
+		timeline.push(test_blocks);
+		
+        var start_block2 = {
+			type: "html-keyboard-response",
+			stimulus: "<p> This block has " + test_stimuli_2.length + " trials </p>" +
+						"<p> Press space bar to continue</p>",
+			choices: [' '],
+			data: { test_part: 'start block' }
+		};
+		
+		var test_procedure2 = {
+				timeline: [fixation, test, feedback],
+				timeline_variables: test_stimuli_2,
+				repetitions: 1,
+				randomize_order: true
+			};
+		
+		
+	
+		var test_blocks2 = {
+			timeline: [start_block2, test_procedure2, end_block],
+			randomize_order: false
+		}
+		timeline.push(test_blocks);
+		
+
+		// var result = {
+   		//  type: 'call-function',
+   		//  func: function() {
+		// 	var resultJson = jsPsych.data.get().csv();
+		// 	jatos.submitResultData(resultJson)
+		// 	}
+		// }
+		// timeline.push(result);
+		
+		/* define debrief */
+		var debrief_block = {
+ 			type: "html-keyboard-response",
+ 			choices: [' '],
+ 			stimulus: function () {
+ 		 		return "<p><b> Please press the space bar to continue to the second part of the experiment.</b></p>"+
+				 		"<p> Thank you for completing the first part of this study!</p>"}
+ 		};
+ 		timeline.push(debrief_block);
+
+
+
+
+		/* start the experiment */
+	/* start the experiment */
+		//jatos.onLoad(function() {
+		// 	if (online){
+		// 		username = jatos.urlQueryParameters.PROLIFIC_PID;
+		// 		var currentStudy = jatos.urlQueryParameters.STUDY_ID;
+		// 		currentTask = jatos.urlQueryParameters.TASK_ID;
+
+		// }
+		jsPsych.init({
+ 			timeline: timeline,
+  			//on_finish: function() {
+       	//if (online){
+		//	   var endLink = "https://app.prolific.co/submissions/complete?cc=" + currentStudy;
+		//			jatos.endStudyAndRedirect(endLink);	   
+		  // } else{
+       		//jatos.endStudy();
+		//}
+});
+
+	</script>
+</body>
+
+
+</html>

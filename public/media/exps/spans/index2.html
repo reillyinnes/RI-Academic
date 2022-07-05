@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<title>nBack</title>
+	<meta charset="UTF-8">
+	<script src="jspsych-6.3.0/jspsych.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="jspsych-6.3.0/plugins/jspsych-html-button-response.js"></script>    
+    <script src="jspsych-6.3.0/plugins/jspsych-image-keyboard-response.js"></script>
+	<script src="jspsych-6.3.0/plugins/jspsych-preload.js"></script>
+	<script src="jspsych-6.3.0/plugins/jspsych-call-function.js"></script>    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+	<script src=//cdnjs.cloudflare.com/ajax/libs/seedrandom/2.3.10/seedrandom.min.js> </script> 
+    <script src="jspsych-6.3.0/plugins/jspsych-fullscreen.js"></script>
+      <link href="jspsych-6.3.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+
+
+	
+</head>
+
+<body>
+	<script type='text/javascript'>
+	
+	
+	/* Script created by Reilly Innes (2021) for a 2 alternate forced choice task (decision making RT task) 
+	based on code provided on jspsych for simple choice rt experiment. The code takes images from the /img folder,
+	shows them on screen (randomly) and asks for participants to make a response. All variables and RTs are recorded in a csv file. 
+	Currently the script is set up to output to JATOS. 
+	In the script, there is first a welcome and instructions, then a practice block, then nblocks of testing and then a debrief block. 
+	
+	To include your own stimulus, delete all images from /img directory and paste your images there. 
+	Next take the R script to format the names of the images to stimuli. In this script, be sure to set correct responses. 
+	In the code, you can change any text to include instructions. 
+	A practice block with feedback is also included here. To change the length of the practice block, change the stimuli included. 
+	To set the number of blocks, change the nblocks variable.
+	To change the response keys (currently set as F and J), change the responseLeft and responseRight variables.
+	Note that these variables are also called for the correct responses to stimuli.
+	To use the same stimulus multiple times, you will have to change the code (and use jspsych repetitions functionality)
+	Alternatively, you can include repeats of the stimuli in the image folder, but this is randomised.
+	To include a set block order, make subfolders in /img and then make your test_stim into n arrays pulled from each subfolder (i.e. block 1 would be img/block1/ -> test_stim[1])
+	You can also add a post trial gap by adding in this variable in the test_procedure timeline after test.
+	You can change the fixation time in fixation; trial_duration. 
+	The practice block will run for as many trials as there are prac_stimuli (randomly showing these)
+	
+	For more details, contact reilly.innes@uon.edu.au. To cite this work use the citation;
+	
+	*/
+	
+	
+	
+	
+	
+	
+	
+		
+		/* create timeline */
+		var timeline = [];
+		var nblocks = 8;
+		var ntrials = 10;
+		var timeout = 6000;	
+		var tooFast = 100;
+		var postTrialGap = 300;
+		var responseLeft = 'z';
+		var responseRight = '/';
+		var online = true
+		
+		if (online == true){
+			// username = jatos.urlQueryParameters.PROLIFIC_PID
+			// console.log(username)
+		}else{
+			
+		}
+		
+		var preload = {
+   			 type: 'preload',
+  			  auto_preload: true 
+		}
+		timeline.push(preload)
+		timeline.push({
+ 		 type: 'fullscreen',
+ 		 fullscreen_mode: true
+		});
+
+
+		/* define welcome message trial */
+		if (online){
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin."		};
+		}else{
+		var welcome = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			post_trial_gap: 1000,
+			stimulus: "Welcome to the experiment. Press space bar to begin."
+		};
+		}
+		timeline.push(welcome);
+		
+		var buttonRight = {
+			type: "image-keyboard-response",
+			post_trial_gap: 1000,
+			stimulus: 'setup/keyboard-right.png',
+			prompt: "<br>"+
+					"<br>"+"Please press this right button.",
+			on_finish: function(data){
+				responseRight = data.response
+			}
+		};
+		
+		var buttonLeft = {
+			type: "image-keyboard-response",
+			post_trial_gap: 1000,
+			stimulus: 'setup/keyboard-left.png',
+			prompt: "<br>"+
+					"<br>"+"Please press this left button.",
+			on_finish: function(data){
+				responseLeft = data.response
+			}
+		};
+		
+		
+		var correctButtons = {
+			type: "html-button-response",
+			choices: ['Yes', 'No'],
+			post_trial_gap: 1000,
+			stimulus: function(){
+			return "<p> The left response button is <strong>" + responseLeft.toUpperCase() + "</strong> and the right response button is <strong>" + responseRight.toUpperCase() + " </strong>. </p>" +
+			"<p> Are these correct? </p>"
+			},
+			on_finish: function(data){
+				if(responseLeft==responseRight){
+					goodButtons = 1
+				}else {
+				goodButtons =  data.response
+				}
+			}
+		};		
+		
+		
+		var buttons = {
+			timeline: [ buttonLeft,buttonRight, correctButtons],
+			loop_function: function(){
+				key_response = goodButtons;
+     	 		if(key_response == 1){
+       			 return true;
+      			} else {
+        		return false;
+      			}
+    		}
+		}
+		
+		
+  		timeline.push(buttons);
+
+		/* define instructions trial */
+		var instructions = {
+			type: "html-keyboard-response",
+			choices: jsPsych.NO_KEYS,
+			stimulus: function(){
+				return "<p>In this experiment, a series of pictures will be shown.</p>" +
+				"<p> You need to decide if you saw the same picture 2 trials ago." +
+				"<p> If you saw the <b>same</b> picture two trials ago, press " + responseLeft.toUpperCase() + " .</p>" +
+				"<p>If the picture is <b>not the same</b> as the picture shown two trials earlier," +
+					" press " + responseRight.toUpperCase() + " .</p>" +
+					"<p> We recommend resting your left and right index fingers on these keys.</p>" +
+				"<p>Please respond as quickly and as accurately as possible.</p>" +
+				"<p> You can commence the experiment shortly. </p>"
+				},
+				trial_duration: 10000,
+			post_trial_gap: 0
+		};
+		timeline.push(instructions);
+
+		var instructions2 = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: function(){
+				return "<p>In this experiment, a series of pictures will be shown.</p>" +
+				"<p> You need to decide if you saw the same picture 2 trials ago." +
+				"<p> If you saw the <b>same</b> picture two trials ago, press " + responseLeft.toUpperCase() + " .</p>" +
+				"<p>If the picture is <b>not the same</b> as the picture shown two trials earlier," +
+					" press " + responseRight.toUpperCase() + " .</p>" +
+					"<p> We recommend resting your left and right index fingers on these keys.</p>" +
+				"<p>Please respond as quickly and as accurately as possible.</p>" +
+				"<p><b>Press space bar for a practice block.</b></p>"},
+			post_trial_gap: 1000
+		};
+		timeline.push(instructions2);
+
+//str.toUpperCase()
+
+		/* test trials */
+
+		var test_stimuli = [{ stimulus: 'img/TO_001_TOOL1_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_002_TOOL2_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_004_TOOL4_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_002_TOOL2_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_001_TOOL1_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_004_TOOL4_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_006_TOOL6_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_005_TOOL5_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_006_TOOL6_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_003_TOOL3_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_014_TOOL14_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_013_TOOL13_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_016_TOOL16_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_014_TOOL14_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_016_TOOL16_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_018_TOOL18_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_017_TOOL17_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_018_TOOL18_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_015_TOOL15_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_017_TOOL17_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_033_TOOL33_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_031_TOOL31_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_031_TOOL31_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_033_TOOL33_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_036_TOOL36_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_034_TOOL34_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_032_TOOL32_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_034_TOOL34_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_032_TOOL32_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_035_TOOL35_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_046_TOOL46_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_046_TOOL46_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_045_TOOL45_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_043_TOOL43_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_045_TOOL45_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_044_TOOL44_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_043_TOOL43_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_044_TOOL44_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_048_TOOL48_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_047_TOOL47_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_055_TOOL55_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_056_TOOL56_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_055_TOOL55_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_057_TOOL57_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_059_TOOL59_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_057_TOOL57_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_058_TOOL58_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_060_TOOL60_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_059_TOOL59_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_058_TOOL58_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_065_TOOL65_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_063_TOOL63_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_064_TOOL64_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_065_TOOL65_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_064_TOOL64_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_066_TOOL66_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_061_TOOL61_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_062_TOOL62_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_066_TOOL66_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_062_TOOL62_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_080_TOOL80_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_081_TOOL81_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_079_TOOL79_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_081_TOOL81_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_079_TOOL79_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_082_TOOL82_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_082_TOOL82_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_083_TOOL83_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_084_TOOL84_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_084_TOOL84_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_085_TOOL85_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_086_TOOL86_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_089_TOOL89_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_086_TOOL86_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_089_TOOL89_BA.png', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} } },{ stimulus: 'img/TO_087_TOOL87_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_088_TOOL88_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_088_TOOL88_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_087_TOOL87_BA.png', data: {test_part: 'test', cond: 'lure',  correct_response: function(){return responseRight} } },{ stimulus: 'img/TO_090_TOOL90_BA.png', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} } }];		
+		
+		var test_stim = [];
+		for (var j=0; j<test_stimuli.length; j+=ntrials) {
+ 		    test_stim.push(test_stimuli.slice(j,j+ntrials));
+		}
+
+
+		var prac_stimuli = [{ stimulus: 'img/Tool99.jpg', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} }, prompt: function(){return"<br><br><br><br><p>Same picture (2 back) = <strong>Press " + responseLeft.toUpperCase() + " </strong>  &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp;  Different picture = <strong>Press " + responseRight.toUpperCase() + " </strong> </p><br><br>This is a <strong>Different picture</strong>.</p> There was no 2 back image." }} ,
+							{ stimulus: 'img/Tool109.jpg', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} }, prompt: function(){return"<br><br><br><br><p>Same picture (2 back) = <strong>Press " + responseLeft.toUpperCase() + " </strong>  &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp;  Different picture = <strong>Press " + responseRight.toUpperCase() + " </strong> </p><br><br>This is a <strong>Different picture</strong>. </p> There was no 2 back image."  }},
+							{ stimulus: 'img/Tool99.jpg', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} }, prompt: function(){return"<br><br><br><br><p>Same picture (2 back) = <strong>Press " + responseLeft.toUpperCase() + " </strong>  &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp;  Different picture = <strong>Press " + responseRight.toUpperCase() + " </strong> </p><br><br>This is the <strong>Same picture from 2 back</strong>."  }},
+							{ stimulus: 'img/Tool112.jpg', data: {test_part: 'test', cond: 'nonlure',  correct_response: function(){return responseRight} }, prompt: function(){return"<br><br><br><br><p>Same picture (2 back) = <strong>Press " + responseLeft.toUpperCase() + " </strong>  &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp;  Different picture = <strong>Press " + responseRight.toUpperCase() + " </strong> </p><br><br>This is a <strong>Different picture</strong>." } },
+							{ stimulus: 'img/Tool99.jpg', data: {test_part: 'test', cond: 'target',  correct_response: function(){return responseLeft} }, prompt: function(){return"<br><br><br><br><p>Same picture (2 back) = <strong>Press " + responseLeft.toUpperCase() + " </strong>  &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp;  Different picture = <strong>Press " + responseRight.toUpperCase() + " </strong> </p><br><br>This is the <strong>Same picture from 2 back</strong>."  }}];
+			
+		
+		
+		var prac_instructions = {
+			type: "html-keyboard-response",
+			choices: [' '],
+			stimulus: "<p>This is the practice block. " +
+				"</p><p> In this block, you have a chance to prepare for the experiment. " +
+				"<p> There are  " + prac_stimuli.length + " trials in this block.</p>" +
+				"<p>Press space bar to begin.</p>",
+			post_trial_gap: 2000
+		};
+		timeline.push(prac_instructions);
+		
+		
+				
+		
+		
+		var prac_reset = {
+			type: 'html-keyboard-response',
+			on_start: function(){
+				document.body.style.backgroundColor = "white"
+			},
+			stimulus: "",
+			choices: jsPsych.NO_KEYS,
+			trial_duration: 10,
+			data: { test_part: 'fixation' }
+		};
+		
+		
+
+		
+		var test_prac = {
+			type: 'image-keyboard-response',
+			stimulus: jsPsych.timelineVariable('stimulus'),
+			data: jsPsych.timelineVariable('data'),
+			prompt: jsPsych.timelineVariable('prompt'),
+			choices: function(){return [responseLeft, responseRight]},
+			on_finish: function (data){
+				data.test_part = "practice";
+				if (data.response == data.correct_response){
+					data.correct = 1
+				} else {
+					data.correct = 0 
+					}
+				},
+			post_trial_gap: 0
+
+		};
+		
+		var feedback_prac = {
+		type: "html-keyboard-response",
+		data: {test_part: "feedback"},
+		choices: [' '],
+		stimulus: function(){
+			var last_trial = jsPsych.data.get().last(1).values()[0].correct;
+			if (last_trial == 1){
+				document.body.style.backgroundColor = 'rgba(0, 255, 0, 0.3)'
+				return "<b> Correct! </b>" +
+						"<p> Press space bar to continue</p>" 
+				
+			} else{
+				document.body.style.backgroundColor = 'rgba(255,0, 0, 0.3)'
+				return "<b> Incorrect!</b>" +
+						"</p><p> Remember to press " + responseLeft.toUpperCase() + 
+						" if you saw the same picture two trials ago. Otherwise, press " 
+						+ responseRight.toUpperCase() + ".</p>"
+						"</p><p> Press space bar to continue</p>" 
+				}
+			}
+		};
+		
+		var practice = {
+				timeline: [test_prac, feedback_prac,prac_reset],
+				timeline_variables: prac_stimuli,
+				repetitions: 1,
+				randomize_order: false
+		};
+		timeline.push(practice);
+		
+		
+		var start_experiment = {
+			type: "html-keyboard-response",
+			on_start: function(){
+				document.body.style.backgroundColor = "white"
+				},
+			choices: [' '],
+			stimulus: " <p>You are now ready to start the experiment!" +
+						"</p><p> If you respond too slow, the trial will stop.</p>" +
+						"</p><p> If you respond too fast, you will be warned. </p>" +
+						"</p><p> Press space bar to continue</p>"
+		}
+		timeline.push(start_experiment);
+		
+		var reset = {
+			type: 'html-keyboard-response',
+			on_start: function(){
+				document.body.style.backgroundColor = "white"
+			},
+			stimulus: "",
+			choices: jsPsych.NO_KEYS,
+			trial_duration: 10,
+			data: { test_part: 'fixation' }
+		};
+
+
+		var test = {
+			type: 'image-keyboard-response',
+			stimulus: jsPsych.timelineVariable('stimulus'),
+			prompt: function(){return"<p>Same picture (2 back)= <strong>Press " + responseLeft.toUpperCase() + " </strong>  &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp; &emsp; &emsp; &emsp;   &emsp;  Different picture = <strong>Press " + responseRight.toUpperCase() + " </strong> </p>"},
+			choices: function(){return [responseLeft, responseRight]},
+			data: jsPsych.timelineVariable('data'),
+			on_finish: function (data){
+				data.test_part = "test"
+				if (online==true){
+				
+				}
+				if (data.response == data.correct_response){
+					data.correct = 1
+				} else {
+					data.correct = 0 
+					}
+				},
+			post_trial_gap: 0,
+			trial_duration: timeout
+		};
+		
+		
+
+		
+		var feedback = {
+			type: "html-keyboard-response",
+			data: {test_part: "feedback"},
+			choices: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return [' ']
+				}else if (last_trial < tooFast){
+					return [' ']
+				} else {
+					return jsPsych.NO_KEYS
+					} 
+				},
+			stimulus: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				var last_trial_acc = jsPsych.data.get().last(1).values()[0].correct;
+				if (last_trial == null){
+					return "<p><b> Too slow!</b> </p><p> Press space bar to continue</p> "
+				} else if (last_trial < tooFast){
+					return "<p><b> Too fast!</b> </p><p> Press space bar to continue</p> "
+				} else if (last_trial_acc == 1){
+					document.body.style.backgroundColor = 'rgba(0, 255, 0, 0.3)'
+					return ""
+				} else {
+					document.body.style.backgroundColor = 'rgba(255, 0, 0, 0.3)'
+					return ""
+					}  
+				},
+			trial_duration: function(){
+				var last_trial = jsPsych.data.get().last(1).values()[0].rt;
+				if (last_trial == null){
+					return 100000
+				}else if (last_trial < tooFast){
+					return 100000
+				} else{
+					return postTrialGap
+					}
+				}
+			};
+	
+		
+		
+		var i;
+		for (i = 0; i < nblocks; i++) {
+			var start_block = {
+			type: "html-keyboard-response",
+			stimulus: function(){
+				return "</p><p> This block has " + ntrials + " trials </p>" +
+						"</p><p> Press space bar to continue</p>"
+						},
+			choices: [' '],
+			data: { test_part: 'start block' }
+		};
+		
+		var test_procedure = {
+				timeline: [ test, feedback,reset],
+				timeline_variables: test_stim[i],
+				repetitions: 1,
+				randomize_order: false
+			};
+		
+		
+		var end_block = {
+			type: "html-keyboard-response",
+			stimulus: "<p>This is the end of the block.</p><p>Press space bar to continue</p>",
+			choices: [' '],
+			data: { test_part: 'end block' }
+
+		};
+		
+		var test_blocks = {
+			timeline: [start_block, test_procedure, end_block],
+			randomize_order: false
+		}
+		timeline.push(test_blocks);
+		};
+	
+		
+
+		
+		/* define debrief */
+		// var result = {
+   		//  type: 'call-function',
+   		//  func: function() {
+		// 	var resultJson = jsPsych.data.get().csv();
+		// 	jatos.submitResultData(resultJson)
+		// 	}
+		// }
+		// timeline.push(result);
+		
+		/* define debrief */
+		var debrief_block = {
+ 			type: "html-keyboard-response",
+ 			choices: [' '],
+ 			stimulus: function () {
+ 		 		return "<p>You have now completed the experiment.  </p> " +
+ 						"<p><b> Please press the space bar to finalise results and return to Prolific.</b></p>"+
+				 		"<p> Thank you!</p>"}
+ 		};
+ 		timeline.push(debrief_block);
+
+
+
+
+		/* start the experiment */
+	/* start the experiment */
+		//jatos.onLoad(function() {
+		// 	if (online){
+		// 		username = jatos.urlQueryParameters.PROLIFIC_PID;
+		// 		var currentStudy = jatos.urlQueryParameters.STUDY_ID;
+		// 		currentTask = jatos.urlQueryParameters.TASK_ID;
+
+		// }
+		jsPsych.init({
+ 			timeline: timeline,
+  			//on_finish: function() {
+       	//if (online){
+		//	   var endLink = "https://app.prolific.co/submissions/complete?cc=" + currentStudy;
+		//			jatos.endStudyAndRedirect(endLink);	   
+		  // } else{
+       		//jatos.endStudy();
+		//}
+});
+
+	</script>
+</body>
+
+
+</html>
