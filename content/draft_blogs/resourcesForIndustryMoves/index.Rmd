@@ -1,0 +1,31 @@
+---
+title: "My top 5 resources for academics going to industry "
+author: "Reilly Innes"
+date: 2022-07-04
+categories: ["meta"]
+tags: ["modelling", "careers", "outreach" ]
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, fig.path = "static")
+```
+
+In this blog post, I'll show you the resources I found most useful when moving from academia to industry. 
+
+# 1. Build a Career In Data Science
+
+<!-- mention dani navarro's blog -->
+
+# 2. Storytelling with Data
+
+# 3. LinkedIn
+
+# 4. Meetups
+
+# 5. Networking!
+
+<!-- more -->
+
+- Reilly
+

@@ -1,0 +1,19 @@
+---
+title: "Template?"
+author: "Reilly Innes"
+date: 2022-07-04
+categories: ["meta"]
+tags: ["modelling", "careers", "outreach" ]
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, fig.path = "static")
+```
+
+In this blog post, I explain what I do as a cognitive modeller - from decision making modelling, to neuroscience, fitting mathematical models to human data and more!
+
+<!-- more -->
+
+- Reilly
+
